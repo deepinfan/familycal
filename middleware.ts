@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
     ALWAYS_PUBLIC_PATHS.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/public") ||
     pathname.endsWith(".png") ||
     pathname.endsWith(".svg") ||
     pathname.endsWith(".ico")

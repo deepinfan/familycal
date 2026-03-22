@@ -1,1 +1,0 @@
-ALTER TABLE "Role" DROP COLUMN "roleKey";

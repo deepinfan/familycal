@@ -17,47 +17,52 @@ const createDocumentSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthFromRequest(request);
-  if (!auth) {
-    return NextResponse.json({ error: "未登录" }, { status: 401 });
-  }
-  if (auth.isAdmin) {
-    return NextResponse.json({ error: "管理员仅可访问后台" }, { status: 403 });
-  }
+  try {
+    const auth = await getAuthFromRequest(request);
+    if (!auth) {
+      return NextResponse.json({ error: "未登录" }, { status: 401 });
+    }
+    if (auth.isAdmin) {
+      return NextResponse.json({ error: "管理员仅可访问后台" }, { status: 403 });
+    }
 
-  const [roles, documents] = await Promise.all([
-    prisma.role.findMany({
-      where: { isAdmin: false },
-      select: { id: true, name: true },
-      orderBy: { createdAt: "asc" }
-    }),
-    prisma.document.findMany({
-      where: {
-        OR: [{ creatorId: auth.roleId }, { visibleTo: { some: { roleId: auth.roleId } } }]
-      },
-      include: {
-        creator: { select: { id: true, name: true } },
-        visibleTo: { include: { role: { select: { id: true, name: true } } } },
-        attachments: true
-      },
-      orderBy: { updatedAt: "desc" }
-    })
-  ]);
+    const [roles, documents] = await Promise.all([
+      prisma.role.findMany({
+        where: { isAdmin: false },
+        select: { id: true, name: true },
+        orderBy: { createdAt: "asc" }
+      }),
+      prisma.document.findMany({
+        where: {
+          OR: [{ creatorId: auth.roleId }, { visibleTo: { some: { roleId: auth.roleId } } }]
+        },
+        include: {
+          creator: { select: { id: true, name: true } },
+          visibleTo: { include: { role: { select: { id: true, name: true } } } },
+          attachments: true
+        },
+        orderBy: { updatedAt: "desc" }
+      })
+    ]);
 
-  return NextResponse.json({
-    currentRoleId: auth.roleId,
-    roles,
-    documents: documents.map((doc) => ({
-      id: doc.id,
-      title: doc.title,
-      content: doc.content,
-      creator: doc.creator,
-      visibleRoles: doc.visibleTo.map((item) => item.role),
-      attachments: doc.attachments,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt
-    }))
-  });
+    return NextResponse.json({
+      currentRoleId: auth.roleId,
+      roles,
+      documents: documents.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        content: doc.content,
+        creator: doc.creator,
+        visibleRoles: doc.visibleTo.map((item) => item.role),
+        attachments: doc.attachments,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt
+      }))
+    });
+  } catch (error) {
+    console.error("Documents API error:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

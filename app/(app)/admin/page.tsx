@@ -49,6 +49,10 @@ export default function AdminPage() {
   const [translatingEdit, setTranslatingEdit] = useState<"" | "zh" | "en">("");
   const [testingLlm, setTestingLlm] = useState(false);
   const [llmTestResult, setLlmTestResult] = useState("");
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [createManualEdited, setCreateManualEdited] = useState<Set<string>>(new Set());
+  const [editManualEdited, setEditManualEdited] = useState<Set<string>>(new Set());
+  const [appTitleManualEdited, setAppTitleManualEdited] = useState<Set<string>>(new Set());
 
   async function loadAll() {
     setError("");
@@ -87,12 +91,12 @@ export default function AdminPage() {
   async function handleAppTitleBlur(source: "zh" | "en") {
     try {
       if (source === "zh") {
-        if (!appTitleZh.trim()) return;
+        if (!appTitleZh.trim() || appTitleManualEdited.has("appTitleEn")) return;
         setTranslatingCreate("zh");
         const translated = await autoTranslate(appTitleZh, "en");
         if (translated) setAppTitleEn(translated);
       } else {
-        if (!appTitleEn.trim()) return;
+        if (!appTitleEn.trim() || appTitleManualEdited.has("appTitleZh")) return;
         setTranslatingCreate("en");
         const translated = await autoTranslate(appTitleEn, "zh");
         if (translated) setAppTitleZh(translated);
@@ -124,12 +128,12 @@ export default function AdminPage() {
   async function handleCreateNameBlur(source: "zh" | "en") {
     try {
       if (source === "zh") {
-        if (!name.trim()) return;
+        if (!name.trim() || createManualEdited.has("nameEn")) return;
         setTranslatingCreate("zh");
         const translated = await autoTranslate(name, "en");
         if (translated) setNameEn(translated);
       } else {
-        if (!nameEn.trim()) return;
+        if (!nameEn.trim() || createManualEdited.has("name")) return;
         setTranslatingCreate("en");
         const translated = await autoTranslate(nameEn, "zh");
         if (translated) setName(translated);
@@ -146,14 +150,14 @@ export default function AdminPage() {
 
     try {
       if (source === "zh") {
-        if (!editingDraft.name.trim()) return;
+        if (!editingDraft.name.trim() || editManualEdited.has("nameEn")) return;
         setTranslatingEdit("zh");
         const translated = await autoTranslate(editingDraft.name, "en");
         if (translated) {
           setEditingDraft((prev) => (prev ? { ...prev, nameEn: translated } : prev));
         }
       } else {
-        if (!editingDraft.nameEn.trim()) return;
+        if (!editingDraft.nameEn.trim() || editManualEdited.has("name")) return;
         setTranslatingEdit("en");
         const translated = await autoTranslate(editingDraft.nameEn, "zh");
         if (translated) {
@@ -256,10 +260,14 @@ export default function AdminPage() {
     await loadAll();
   }
 
-  async function saveConfig(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveConfig() {
     setError("");
     setLlmTestResult("");
+
+    if (!llmModel) {
+      setError("请先测试配置并选择模型");
+      return;
+    }
 
     const payload: Record<string, string> = {
       llmBaseUrl: llmBaseUrl.trim(),
@@ -283,28 +291,30 @@ export default function AdminPage() {
     }
 
     setConfig(json);
+    setLlmApiKey("");
+    setAvailableModels([]);
+    setLlmTestResult("✅ 配置已保存");
     window.dispatchEvent(
       new CustomEvent("homecal-config-updated", {
         detail: {
-          appTitleZh: json.appTitleZh ?? appTitleZh.trim(),
-          appTitleEn: json.appTitleEn ?? appTitleEn.trim()
+          appTitleZh: json.appTitleZh,
+          appTitleEn: json.appTitleEn
         }
       })
     );
-    setLlmApiKey("");
   }
 
   async function testLlmConfig() {
     setTestingLlm(true);
     setLlmTestResult("");
     setError("");
+    setAvailableModels([]);
 
     const res = await fetch("/api/admin/test-llm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         llmBaseUrl: llmBaseUrl.trim(),
-        llmModel: llmModel.trim(),
         llmApiKey: llmApiKey.trim()
       })
     });
@@ -318,6 +328,9 @@ export default function AdminPage() {
     }
 
     setLlmTestResult(`✅ ${json.message ?? "测试成功"}`);
+    if (json.models && Array.isArray(json.models)) {
+      setAvailableModels(json.models);
+    }
   }
 
   async function saveAppTitle(e: React.FormEvent) {
@@ -371,7 +384,10 @@ export default function AdminPage() {
                 <input
                   required
                   value={appTitleZh}
-                  onChange={(e) => setAppTitleZh(e.target.value)}
+                  onChange={(e) => {
+                    setAppTitleZh(e.target.value);
+                    setAppTitleManualEdited(prev => new Set(prev).add("appTitleZh"));
+                  }}
                   onBlur={() => handleAppTitleBlur("zh")}
                   placeholder="千千万万的家"
                 />
@@ -384,7 +400,10 @@ export default function AdminPage() {
                 <input
                   required
                   value={appTitleEn}
-                  onChange={(e) => setAppTitleEn(e.target.value)}
+                  onChange={(e) => {
+                    setAppTitleEn(e.target.value);
+                    setAppTitleManualEdited(prev => new Set(prev).add("appTitleEn"));
+                  }}
                   onBlur={() => handleAppTitleBlur("en")}
                   placeholder="Homes Unfold"
                 />
@@ -395,7 +414,7 @@ export default function AdminPage() {
 
             <div className="btn-row">
               <button type="submit" className="btn btn-accent">
-                {t("saveAppTitleConfig")}
+                保存
               </button>
             </div>
           </form>
@@ -408,8 +427,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <form onSubmit={saveConfig} className="section-grid">
-
+          <div className="section-grid">
             <label>
               <div className="eyebrow" style={{ marginBottom: 8 }}>
                 {t("openaiApiUrl")}
@@ -417,20 +435,12 @@ export default function AdminPage() {
               <input
                 required
                 value={llmBaseUrl}
-                onChange={(e) => setLlmBaseUrl(e.target.value)}
+                onChange={(e) => {
+                  setLlmBaseUrl(e.target.value);
+                  setAvailableModels([]);
+                  setLlmModel("");
+                }}
                 placeholder="https://api.openai.com/v1"
-              />
-            </label>
-
-            <label>
-              <div className="eyebrow" style={{ marginBottom: 8 }}>
-                {t("modelName")}
-              </div>
-              <input
-                required
-                value={llmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-                placeholder="gpt-4.1-mini"
               />
             </label>
 
@@ -441,7 +451,11 @@ export default function AdminPage() {
               <input
                 type="password"
                 value={llmApiKey}
-                onChange={(e) => setLlmApiKey(e.target.value)}
+                onChange={(e) => {
+                  setLlmApiKey(e.target.value);
+                  setAvailableModels([]);
+                  setLlmModel("");
+                }}
                 placeholder={config?.hasLlmApiKey ? t("apiKeyConfigured") : t("apiKeyInput")}
               />
             </label>
@@ -450,6 +464,25 @@ export default function AdminPage() {
               {t("currentKeyStatus")}：{config?.hasLlmApiKey ? t("configured") : t("notConfigured")}
             </div>
 
+            {availableModels.length > 0 && (
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 8 }}>可用模型（点击选择）</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                  {availableModels.map((model) => (
+                    <button
+                      key={model}
+                      type="button"
+                      onClick={() => setLlmModel(model)}
+                      className={`pill ${llmModel === model ? "pill--active" : ""}`}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {model}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {llmTestResult && (
               <div className="inline-note" style={{ color: llmTestResult.startsWith("✅") ? "#16a34a" : "#dc2626" }}>
                 {llmTestResult}
@@ -457,14 +490,16 @@ export default function AdminPage() {
             )}
 
             <div className="btn-row">
-              <button type="button" onClick={testLlmConfig} disabled={testingLlm} className="btn btn-ghost">
-                {testingLlm ? "测试中..." : "测试配置"}
-              </button>
-              <button type="submit" className="btn btn-accent">
-                {t("saveModelServiceConfig")}
+              <button
+                type="button"
+                onClick={availableModels.length > 0 && llmModel ? saveConfig : testLlmConfig}
+                disabled={testingLlm}
+                className="btn btn-accent"
+              >
+                {testingLlm ? "测试中..." : (availableModels.length > 0 && llmModel ? "保存" : "测试")}
               </button>
             </div>
-          </form>
+          </div>
         </section>
 
         <section className="panel">
@@ -480,14 +515,20 @@ export default function AdminPage() {
                 required
                 placeholder="中文名"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setCreateManualEdited(prev => new Set(prev).add("name"));
+                }}
                 onBlur={() => handleCreateNameBlur("zh")}
               />
               <input
                 required
                 placeholder="English Name"
                 value={nameEn}
-                onChange={(e) => setNameEn(e.target.value)}
+                onChange={(e) => {
+                  setNameEn(e.target.value);
+                  setCreateManualEdited(prev => new Set(prev).add("nameEn"));
+                }}
                 onBlur={() => handleCreateNameBlur("en")}
               />
             </div>
@@ -562,13 +603,19 @@ export default function AdminPage() {
                     <div className="grid-cards grid-cards--2">
                       <input
                         value={editingDraft.name}
-                        onChange={(e) => setEditingDraft({ ...editingDraft, name: e.target.value })}
+                        onChange={(e) => {
+                          setEditingDraft({ ...editingDraft, name: e.target.value });
+                          setEditManualEdited(prev => new Set(prev).add("name"));
+                        }}
                         placeholder="中文名"
                         onBlur={() => handleEditNameBlur("zh")}
                       />
                       <input
                         value={editingDraft.nameEn}
-                        onChange={(e) => setEditingDraft({ ...editingDraft, nameEn: e.target.value })}
+                        onChange={(e) => {
+                          setEditingDraft({ ...editingDraft, nameEn: e.target.value });
+                          setEditManualEdited(prev => new Set(prev).add("nameEn"));
+                        }}
                         placeholder="English Name"
                         onBlur={() => handleEditNameBlur("en")}
                       />

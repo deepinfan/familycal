@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const DEFAULT_PASSWORD = process.env.DEFAULT_ROLE_PASSWORD ?? "123456";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin123456";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "admin123";
 
 const initialRoles = [
   { name: "爷爷", nameEn: "Grandpa" },

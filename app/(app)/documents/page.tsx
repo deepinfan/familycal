@@ -76,11 +76,14 @@ export default function DocumentsPage() {
 
   async function loadDocs() {
     const res = await fetch("/api/documents", { cache: "no-store" });
-    const json = await res.json();
+
     if (!res.ok) {
-      setError(json.error ?? "加载失败");
+      const text = await res.text();
+      setError(`加载失败 (${res.status}): ${text}`);
       return;
     }
+
+    const json = await res.json();
     setData(json);
   }
 
