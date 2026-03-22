@@ -1,0 +1,2 @@
+ALTER TABLE "public"."Role"
+ADD COLUMN "nameEn" TEXT NOT NULL DEFAULT '';

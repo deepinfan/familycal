@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id               String               @id @default(cuid())
+  name             String
+  nameEn           String               @default("")
+  passwordHash     String
+  isAdmin          Boolean              @default(false)
+  createdAt        DateTime             @default(now())
+  createdEvents    Event[]              @relation("creator")
+  issuedEvents     Event[]              @relation("issuer")
+  assignedEvents   EventAssignee[]
+  createdDocs      Document[]
+  docVisibilities  DocumentVisibility[]
+  eventLogs        EventLog[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Event {
+  id         String          @id @default(cuid())
+  titleZh    String
+  titleEn    String
+  datetime   DateTime
+  type       String
+  repeatCycle String         @default("none")
+  repeatUntil DateTime?
+  status     String          @default("pending")
+  creatorId  String
+  creator    Role            @relation("creator", fields: [creatorId], references: [id])
+  issuedById String
+  issuedBy   Role            @relation("issuer", fields: [issuedById], references: [id])
+  assignees  EventAssignee[]
+  logs       EventLog[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+model EventAssignee {
+  eventId String
+  roleId  String
+  event   Event @relation(fields: [eventId], references: [id])
+  role    Role  @relation(fields: [roleId], references: [id])
+
+  @@id([eventId, roleId])
+}
+
+model EventLog {
+  id          String    @id @default(cuid())
+  eventId     String
+  event       Event     @relation(fields: [eventId], references: [id])
+  actorId     String
+  actor       Role      @relation(fields: [actorId], references: [id])
+  action      String
+  reason      String?
+  newDatetime DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Document {
+  id         String               @id @default(cuid())
+  title      String
+  content    String
+  creatorId  String
+  creator    Role                 @relation(fields: [creatorId], references: [id])
+  visibleTo  DocumentVisibility[]
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+}
+
+model DocumentVisibility {
+  documentId String
+  roleId     String
+  document   Document @relation(fields: [documentId], references: [id])
+  role       Role     @relation(fields: [roleId], references: [id])
+
+  @@id([documentId, roleId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

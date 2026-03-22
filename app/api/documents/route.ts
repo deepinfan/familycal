@@ -1,0 +1,106 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getAuthFromRequest } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+const createDocumentSchema = z.object({
+  title: z.string().min(1),
+  content: z.string(),
+  visibleRoleIds: z.array(z.string()).optional().default([]),
+  visibleAll: z.boolean().optional().default(false),
+  attachments: z.array(z.object({
+    filename: z.string(),
+    filepath: z.string(),
+    mimetype: z.string(),
+    size: z.number()
+  })).optional().default([])
+});
+
+export async function GET(request: NextRequest) {
+  const auth = await getAuthFromRequest(request);
+  if (!auth) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+  if (auth.isAdmin) {
+    return NextResponse.json({ error: "管理员仅可访问后台" }, { status: 403 });
+  }
+
+  const [roles, documents] = await Promise.all([
+    prisma.role.findMany({
+      where: { isAdmin: false },
+      select: { id: true, name: true },
+      orderBy: { createdAt: "asc" }
+    }),
+    prisma.document.findMany({
+      where: {
+        OR: [{ creatorId: auth.roleId }, { visibleTo: { some: { roleId: auth.roleId } } }]
+      },
+      include: {
+        creator: { select: { id: true, name: true } },
+        visibleTo: { include: { role: { select: { id: true, name: true } } } },
+        attachments: true
+      },
+      orderBy: { updatedAt: "desc" }
+    })
+  ]);
+
+  return NextResponse.json({
+    currentRoleId: auth.roleId,
+    roles,
+    documents: documents.map((doc) => ({
+      id: doc.id,
+      title: doc.title,
+      content: doc.content,
+      creator: doc.creator,
+      visibleRoles: doc.visibleTo.map((item) => item.role),
+      attachments: doc.attachments,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    }))
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await getAuthFromRequest(request);
+  if (!auth) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 });
+  }
+  if (auth.isAdmin) {
+    return NextResponse.json({ error: "管理员仅可访问后台" }, { status: 403 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = createDocumentSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "参数不合法" }, { status: 400 });
+  }
+
+  const visibleRoleIds = parsed.data.visibleAll
+    ? (await prisma.role.findMany({ where: { isAdmin: false }, select: { id: true } })).map((r) => r.id)
+    : parsed.data.visibleRoleIds;
+
+  const dedupRoleIds = Array.from(new Set(visibleRoleIds));
+  if (dedupRoleIds.length === 0) {
+    return NextResponse.json({ error: "至少选择一个可见角色" }, { status: 400 });
+  }
+
+  const doc = await prisma.document.create({
+    data: {
+      title: parsed.data.title,
+      content: parsed.data.content,
+      creatorId: auth.roleId,
+      visibleTo: {
+        createMany: {
+          data: dedupRoleIds.map((roleId) => ({ roleId }))
+        }
+      },
+      attachments: {
+        createMany: {
+          data: parsed.data.attachments
+        }
+      }
+    }
+  });
+
+  return NextResponse.json({ documentId: doc.id });
+}
