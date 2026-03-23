@@ -53,7 +53,7 @@ type EditDraft = {
 };
 
 export default function DocumentsPage() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [data, setData] = useState<DocumentsResponse | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -75,7 +75,12 @@ export default function DocumentsPage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   async function loadDocs() {
-    const res = await fetch("/api/documents", { cache: "no-store" });
+    const res = await fetch("/api/documents", {
+      cache: "no-store",
+      headers: {
+        "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
+      }
+    });
 
     if (!res.ok) {
       const text = await res.text();
@@ -96,6 +101,38 @@ export default function DocumentsPage() {
       } catch {}
     }
   }, []);
+
+  useEffect(() => {
+    loadDocs();
+  }, [language]);
+
+  useEffect(() => {
+    if (!data || expandedDocIds.length === 0) return;
+
+    async function loadExpandedContents() {
+      for (const docId of expandedDocIds) {
+        const doc = data.documents.find(d => d.id === docId);
+        if (doc && !doc.content) {
+          const res = await fetch(`/api/documents/${docId}/content`, {
+            headers: {
+              "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
+            }
+          });
+          if (res.ok) {
+            const json = await res.json();
+            setData(prev => prev ? {
+              ...prev,
+              documents: prev.documents.map(d =>
+                d.id === docId ? { ...d, content: json.content } : d
+              )
+            } : null);
+          }
+        }
+      }
+    }
+
+    loadExpandedContents();
+  }, [data?.documents.length, expandedDocIds.length]);
 
   const roles = useMemo(() => data?.roles ?? [], [data]);
 
@@ -127,7 +164,11 @@ export default function DocumentsPage() {
     if (isExpanding && data) {
       const doc = data.documents.find(d => d.id === docId);
       if (doc && !doc.content) {
-        const res = await fetch(`/api/documents/${docId}/content`);
+        const res = await fetch(`/api/documents/${docId}/content`, {
+          headers: {
+            "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
+          }
+        });
         if (res.ok) {
           const json = await res.json();
           setData(prev => prev ? {
@@ -244,7 +285,11 @@ export default function DocumentsPage() {
 
     let content = doc.content;
     if (!content) {
-      const res = await fetch(`/api/documents/${doc.id}/content`);
+      const res = await fetch(`/api/documents/${doc.id}/content`, {
+        headers: {
+          "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
+        }
+      });
       if (res.ok) {
         const json = await res.json();
         content = json.content;
