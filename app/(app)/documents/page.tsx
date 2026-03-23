@@ -106,7 +106,24 @@ export default function DocumentsPage() {
     }
 
     const json = await res.json();
-    setData(json);
+
+    // Merge with existing data to preserve loaded content
+    setData(prev => {
+      if (!prev) return json;
+
+      return {
+        ...json,
+        documents: json.documents.map((newDoc: DocumentItem) => {
+          const oldDoc = prev.documents.find(d => d.id === newDoc.id);
+          return {
+            ...newDoc,
+            content: oldDoc?.content || newDoc.content,
+            attachments: oldDoc?.attachments.length ? oldDoc.attachments : newDoc.attachments
+          };
+        })
+      };
+    });
+
     sessionStorage.setItem('documents-cache', JSON.stringify(json));
 
     // Load attachments for expanded documents
