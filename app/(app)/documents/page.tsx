@@ -635,7 +635,7 @@ export default function DocumentsPage() {
                   <span className="doc-title-line">
                     <span className="doc-title-text">{doc.title}</span>
                     <span className="doc-title-meta">
-                      {formatDocDate(doc.createdAt)} · {doc.creator.name}
+                      {formatDocDate(doc.createdAt)} · {displayRoleName(doc.creator)}
                     </span>
                   </span>
                 </span>
