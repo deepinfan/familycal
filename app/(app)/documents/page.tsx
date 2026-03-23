@@ -110,6 +110,8 @@ export default function DocumentsPage() {
     if (!data || expandedDocIds.length === 0) return;
 
     async function loadExpandedContents() {
+      if (!data) return;
+
       for (const docId of expandedDocIds) {
         const doc = data.documents.find(d => d.id === docId);
         if (doc && !doc.content) {
