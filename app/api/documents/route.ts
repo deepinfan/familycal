@@ -38,10 +38,19 @@ export async function GET(request: NextRequest) {
         where: {
           OR: [{ creatorId: auth.roleId }, { visibleTo: { some: { roleId: auth.roleId } } }]
         },
-        include: {
+        select: {
+          id: true,
+          titleZh: true,
+          titleEn: true,
+          creatorId: true,
+          createdAt: true,
+          updatedAt: true,
           creator: { select: { id: true, name: true, nameEn: true } },
-          visibleTo: { include: { role: { select: { id: true, name: true, nameEn: true } } } },
-          attachments: true
+          visibleTo: {
+            select: {
+              role: { select: { id: true, name: true, nameEn: true } }
+            }
+          }
         },
         orderBy: { updatedAt: "desc" }
       })
@@ -57,7 +66,7 @@ export async function GET(request: NextRequest) {
         title: lang === "zh" ? doc.titleZh : doc.titleEn,
         creator: doc.creator,
         visibleRoles: doc.visibleTo.map((item) => item.role),
-        attachments: doc.attachments,
+        attachments: [],
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt
       }))

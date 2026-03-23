@@ -91,6 +91,40 @@ export default function DocumentsPage() {
 
     const json = await res.json();
     setData(json);
+
+    // Load attachments for expanded documents
+    if (expandedDocIds.length > 0) {
+      loadAttachmentsForDocs(expandedDocIds, json.documents);
+    }
+  }
+
+  async function loadAttachmentsForDocs(docIds: string[], docs: DocumentItem[]) {
+    const promises = docIds.map(async (docId) => {
+      const doc = docs.find(d => d.id === docId);
+      if (doc && doc.attachments.length === 0) {
+        const res = await fetch(`/api/documents/${docId}/attachments`);
+        if (res.ok) {
+          const json = await res.json();
+          return { docId, attachments: json.attachments };
+        }
+      }
+      return null;
+    });
+
+    const results = await Promise.all(promises);
+
+    setData(prev => {
+      if (!prev) return null;
+      const updated = { ...prev };
+      results.forEach(result => {
+        if (result) {
+          updated.documents = updated.documents.map(d =>
+            d.id === result.docId ? { ...d, attachments: result.attachments } : d
+          );
+        }
+      });
+      return updated;
+    });
   }
 
   useEffect(() => {
@@ -113,29 +147,39 @@ export default function DocumentsPage() {
     async function loadExpandedContents() {
       if (!data) return;
 
-      for (const docId of expandedDocIds) {
+      const docsNeedingContent = expandedDocIds.filter(docId => {
         const doc = data.documents.find(d => d.id === docId);
-        if (doc && !doc.content) {
-          const res = await fetch(`/api/documents/${docId}/content`, {
-            headers: {
-              "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
-            }
-          });
-          if (res.ok) {
-            const json = await res.json();
-            setData(prev => prev ? {
-              ...prev,
-              documents: prev.documents.map(d =>
-                d.id === docId ? { ...d, content: json.content } : d
-              )
-            } : null);
+        return doc && !doc.content;
+      });
+
+      if (docsNeedingContent.length === 0) return;
+
+      const promises = docsNeedingContent.map(docId =>
+        fetch(`/api/documents/${docId}/content`, {
+          headers: {
+            "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
           }
-        }
-      }
+        }).then(res => res.ok ? res.json().then(json => ({ docId, content: json.content })) : null)
+      );
+
+      const results = await Promise.all(promises);
+
+      setData(prev => {
+        if (!prev) return null;
+        const updated = { ...prev };
+        results.forEach(result => {
+          if (result) {
+            updated.documents = updated.documents.map(d =>
+              d.id === result.docId ? { ...d, content: result.content } : d
+            );
+          }
+        });
+        return updated;
+      });
     }
 
     loadExpandedContents();
-  }, [data?.documents.length, expandedDocIds.length]);
+  }, [data?.documents.length, expandedDocIds.length, language]);
 
   const roles = useMemo(() => data?.roles ?? [], [data]);
 
