@@ -74,6 +74,8 @@ export default function DocumentsPage() {
   }>>([]);
   const [uploading, setUploading] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   async function loadDocs() {
     const res = await fetch("/api/documents", {
@@ -718,24 +720,62 @@ export default function DocumentsPage() {
 
                       {doc.attachments.length > 0 ? (
                         <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)" }}>
-                          <div className="eyebrow" style={{ marginBottom: "0.5rem" }}>附件</div>
+                          <div className="eyebrow" style={{ marginBottom: "0.5rem" }}>
+                            附件
+                            {Array.from(loadingImages).some(id => doc.attachments.some(a => a.id === id)) && (
+                              <span style={{ marginLeft: "0.5rem", fontSize: "0.85rem", color: "var(--muted)" }}>
+                                图片加载中...
+                              </span>
+                            )}
+                          </div>
                           {doc.attachments.map((file) => {
                             const isImage = file.mimetype.startsWith("image/");
                             const protectedUrl = `/api/files/${file.filepath.split('/').pop()}`;
+                            const isLoading = loadingImages.has(file.id);
                             return (
                               <div key={file.id} style={{ marginBottom: "1rem" }}>
                                 {isImage ? (
                                   <div>
+                                    {isLoading && (
+                                      <div style={{
+                                        padding: "2rem",
+                                        textAlign: "center",
+                                        background: "var(--surface)",
+                                        borderRadius: "8px",
+                                        color: "var(--muted)"
+                                      }}>
+                                        加载中...
+                                      </div>
+                                    )}
                                     <img
                                       src={protectedUrl}
                                       alt={file.filename}
                                       onClick={() => setViewingImage(protectedUrl)}
+                                      onLoadStart={() => {
+                                        setLoadingImages(prev => new Set(prev).add(file.id));
+                                      }}
+                                      onLoad={() => {
+                                        setLoadingImages(prev => {
+                                          const next = new Set(prev);
+                                          next.delete(file.id);
+                                          return next;
+                                        });
+                                        setLoadedImages(prev => new Set(prev).add(file.id));
+                                      }}
+                                      onError={() => {
+                                        setLoadingImages(prev => {
+                                          const next = new Set(prev);
+                                          next.delete(file.id);
+                                          return next;
+                                        });
+                                      }}
                                       style={{
                                         width: "100%",
                                         height: "auto",
                                         borderRadius: "8px",
                                         marginBottom: "0.5rem",
-                                        cursor: "pointer"
+                                        cursor: "pointer",
+                                        display: isLoading ? "none" : "block"
                                       }}
                                     />
                                     <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>
