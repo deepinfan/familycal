@@ -279,16 +279,31 @@ export default function DocumentsPage() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
-        if (!res.ok) {
-          throw new Error(`上传 ${file.name} 失败`);
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || `上传 ${file.name} 失败 (${res.status})`);
+          }
+
+          return res.json();
+        } catch (err) {
+          clearTimeout(timeoutId);
+          if (err instanceof Error && err.name === 'AbortError') {
+            throw new Error(`上传 ${file.name} 超时，请检查网络连接`);
+          }
+          throw err;
         }
-
-        return res.json();
       });
 
       const results = await Promise.all(uploadPromises);
