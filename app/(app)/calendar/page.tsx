@@ -375,6 +375,13 @@ export default function CalendarPage() {
         sections.push({ key, day: new Date(d), events: dayEvents });
       }
     }
+
+    if (sections.length === 0) {
+      const today = new Date();
+      const todayKey = toDateKey(today);
+      sections.push({ key: todayKey, day: today, events: [] });
+    }
+
     return sections;
   }, [grouped, anchor]);
 
