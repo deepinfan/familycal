@@ -1021,10 +1021,11 @@ textarea:focus {
 }
 
 .choice-card--active {
-  border-color: var(--primary-light);
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  border-color: var(--primary);
+  background: var(--primary);
   color: #fff;
-  box-shadow: 0 12px 30px var(--primary-shadow);
+  box-shadow: 0 4px 12px var(--primary-shadow);
+  font-weight: 600;
 }
 
 .app-header {
