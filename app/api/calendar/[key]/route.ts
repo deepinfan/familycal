@@ -8,6 +8,8 @@ function generateICalendar(events: any[], roleId: string) {
     "PRODID:-//FamilyCal//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
+    "X-WR-CALNAME:FamilyCal Tasks",
+    "X-WR-TIMEZONE:UTC",
     "REFRESH-INTERVAL;VALUE=DURATION:PT10M",
     "X-PUBLISHED-TTL:PT10M"
   ];
@@ -16,14 +18,15 @@ function generateICalendar(events: any[], roleId: string) {
     const uid = `${event.id}@familycal.app`;
     const dtstart = formatDateTime(event.datetime);
     const summary = event.titleZh || event.titleEn;
-    const status = event.status === "done" ? "COMPLETED" : "NEEDS-ACTION";
+    const dtstamp = formatDateTime(event.updatedAt);
+    const created = formatDateTime(event.createdAt);
 
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${uid}`);
+    lines.push(`DTSTAMP:${dtstamp}`);
     lines.push(`DTSTART:${dtstart}`);
     lines.push(`SUMMARY:${summary}`);
-    lines.push(`STATUS:${status}`);
-    lines.push(`DTSTAMP:${formatDateTime(event.updatedAt)}`);
+    lines.push(`CREATED:${created}`);
 
     if (event.repeatCycle !== "none" && event.repeatUntil) {
       const rrule = generateRRule(event.repeatCycle, event.repeatUntil);
