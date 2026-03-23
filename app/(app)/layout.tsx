@@ -167,7 +167,7 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
   }
 
   async function copySubscriptionLink() {
-    const url = `${window.location.origin}/api/calendar/${subscriptionKey}`;
+    const url = `${window.location.origin}/api/calendar/${subscriptionKey}.ics`;
     await navigator.clipboard.writeText(url);
     setSettingsNote(t("linkCopied"));
   }
@@ -318,7 +318,7 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
                     <input
                       type="text"
                       readOnly
-                      value={`${window.location.origin}/api/calendar/${subscriptionKey}`}
+                      value={`${window.location.origin}/api/calendar/${subscriptionKey}.ics`}
                       style={{ marginBottom: "0.5rem" }}
                     />
                     <div className="btn-row" style={{ marginBottom: "0.5rem" }}>
