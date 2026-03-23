@@ -111,7 +111,7 @@ export default function DocumentsPage() {
     setData(prev => {
       if (!prev) return json;
 
-      return {
+      const merged = {
         ...json,
         documents: json.documents.map((newDoc: DocumentItem) => {
           const oldDoc = prev.documents.find(d => d.id === newDoc.id);
@@ -122,9 +122,11 @@ export default function DocumentsPage() {
           };
         })
       };
-    });
 
-    sessionStorage.setItem('documents-cache', JSON.stringify(json));
+      // Cache merged data with loaded content
+      sessionStorage.setItem('documents-cache', JSON.stringify(merged));
+      return merged;
+    });
 
     // Load attachments for expanded documents
     if (expandedDocIds.length > 0) {
