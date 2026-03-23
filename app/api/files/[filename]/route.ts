@@ -15,7 +15,7 @@ export async function GET(
 
   const { filename } = await context.params;
 
-  const attachment = await prisma.documentAttachment.findFirst({
+  const attachment = await prisma.attachment.findFirst({
     where: { filepath: `/uploads/${filename}` },
     include: {
       document: {

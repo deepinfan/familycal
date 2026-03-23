@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   await prisma.$transaction([
     prisma.documentVisibility.deleteMany({ where: { documentId: id } }),
-    prisma.documentAttachment.deleteMany({
+    prisma.attachment.deleteMany({
       where: {
         documentId: id,
         id: { notIn: parsed.data.keepAttachmentIds }
