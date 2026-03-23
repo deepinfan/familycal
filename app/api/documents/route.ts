@@ -55,7 +55,6 @@ export async function GET(request: NextRequest) {
       documents: documents.map((doc) => ({
         id: doc.id,
         title: lang === "zh" ? doc.titleZh : doc.titleEn,
-        content: lang === "zh" ? doc.contentZh : doc.contentEn,
         creator: doc.creator,
         visibleRoles: doc.visibleTo.map((item) => item.role),
         attachments: doc.attachments,
