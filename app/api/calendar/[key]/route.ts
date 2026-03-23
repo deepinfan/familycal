@@ -25,8 +25,10 @@ function generateICalendar(events: any[], roleId: string) {
     lines.push(`UID:${uid}`);
     lines.push(`DTSTAMP:${dtstamp}`);
     lines.push(`DTSTART:${dtstart}`);
-    lines.push(`SUMMARY:${summary}`);
+    lines.push(`SUMMARY:${escapeSummary(summary)}`);
     lines.push(`CREATED:${created}`);
+    lines.push(`SEQUENCE:0`);
+    lines.push(`TRANSP:OPAQUE`);
 
     if (event.repeatCycle !== "none" && event.repeatUntil) {
       const rrule = generateRRule(event.repeatCycle, event.repeatUntil);
@@ -43,6 +45,10 @@ function generateICalendar(events: any[], roleId: string) {
 function formatDateTime(date: Date | string): string {
   const d = new Date(date);
   return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function escapeSummary(text: string): string {
+  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
 function generateRRule(cycle: string, until: Date | string): string {
