@@ -66,8 +66,10 @@ model EventLog {
 
 model Document {
   id         String               @id @default(cuid())
-  title      String
-  content    String
+  titleZh    String
+  titleEn    String
+  contentZh  String
+  contentEn  String
   creatorId  String
   creator    Role                 @relation(fields: [creatorId], references: [id])
   visibleTo  DocumentVisibility[]

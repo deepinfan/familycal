@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { detectLanguage } from "@/lib/lang-detect";
 
 const createDocumentSchema = z.object({
   title: z.string().min(1),
@@ -45,13 +46,15 @@ export async function GET(request: NextRequest) {
       })
     ]);
 
+    const lang = request.headers.get("accept-language")?.includes("zh") ? "zh" : "en";
+
     return NextResponse.json({
       currentRoleId: auth.roleId,
       roles,
       documents: documents.map((doc) => ({
         id: doc.id,
-        title: doc.title,
-        content: doc.content,
+        title: lang === "zh" ? doc.titleZh : doc.titleEn,
+        content: lang === "zh" ? doc.contentZh : doc.contentEn,
         creator: doc.creator,
         visibleRoles: doc.visibleTo.map((item) => item.role),
         attachments: doc.attachments,
@@ -89,10 +92,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "至少选择一个可见角色" }, { status: 400 });
   }
 
+  const titleLang = detectLanguage(parsed.data.title);
+  const contentLang = detectLanguage(parsed.data.content);
+
   const doc = await prisma.document.create({
     data: {
-      title: parsed.data.title,
-      content: parsed.data.content,
+      titleZh: titleLang === "zh" ? parsed.data.title : "",
+      titleEn: titleLang === "en" ? parsed.data.title : "",
+      contentZh: contentLang === "zh" ? parsed.data.content : "",
+      contentEn: contentLang === "en" ? parsed.data.content : "",
       creatorId: auth.roleId,
       visibleTo: {
         createMany: {

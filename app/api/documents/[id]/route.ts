@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { detectLanguage } from "@/lib/lang-detect";
 
 const patchSchema = z.object({
   title: z.string().min(1),
@@ -50,6 +51,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     return NextResponse.json({ error: "至少选择一个可见角色" }, { status: 400 });
   }
 
+  const titleLang = detectLanguage(parsed.data.title);
+  const contentLang = detectLanguage(parsed.data.content);
+
   await prisma.$transaction([
     prisma.documentVisibility.deleteMany({ where: { documentId: id } }),
     prisma.attachment.deleteMany({
@@ -61,8 +65,10 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     prisma.document.update({
       where: { id },
       data: {
-        title: parsed.data.title,
-        content: parsed.data.content,
+        titleZh: titleLang === "zh" ? parsed.data.title : "",
+        titleEn: titleLang === "en" ? parsed.data.title : "",
+        contentZh: contentLang === "zh" ? parsed.data.content : "",
+        contentEn: contentLang === "en" ? parsed.data.content : "",
         attachments: {
           createMany: {
             data: parsed.data.newAttachments
