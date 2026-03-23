@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { detectLanguage } from "@/lib/lang-detect";
+import { translateWithFallback } from "@/lib/translate";
 
 export async function GET(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get("secret");
@@ -20,24 +21,26 @@ export async function GET(request: NextRequest) {
         const updates: any = {};
 
         if (needsFixTitle) {
-          const titleLang = detectLanguage(doc.titleZh || doc.titleEn);
+          const titleText = doc.titleZh || doc.titleEn;
+          const titleLang = detectLanguage(titleText);
           if (titleLang === "zh") {
-            updates.titleZh = doc.titleZh || doc.titleEn;
-            updates.titleEn = "";
+            updates.titleZh = titleText;
+            updates.titleEn = await translateWithFallback(titleText, "en");
           } else {
-            updates.titleEn = doc.titleZh || doc.titleEn;
-            updates.titleZh = "";
+            updates.titleEn = titleText;
+            updates.titleZh = await translateWithFallback(titleText, "zh");
           }
         }
 
         if (needsFixContent) {
-          const contentLang = detectLanguage(doc.contentZh || doc.contentEn);
+          const contentText = doc.contentZh || doc.contentEn;
+          const contentLang = detectLanguage(contentText);
           if (contentLang === "zh") {
-            updates.contentZh = doc.contentZh || doc.contentEn;
-            updates.contentEn = "";
+            updates.contentZh = contentText;
+            updates.contentEn = await translateWithFallback(contentText, "en");
           } else {
-            updates.contentEn = doc.contentZh || doc.contentEn;
-            updates.contentZh = "";
+            updates.contentEn = contentText;
+            updates.contentZh = await translateWithFallback(contentText, "zh");
           }
         }
 
