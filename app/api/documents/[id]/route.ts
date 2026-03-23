@@ -13,6 +13,7 @@ const patchSchema = z.object({
   newAttachments: z.array(z.object({
     filename: z.string(),
     filepath: z.string(),
+    thumbnail: z.string().nullable().optional(),
     mimetype: z.string(),
     size: z.number()
   })).optional().default([])

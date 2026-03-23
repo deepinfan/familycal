@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { extname } from "path";
 import { getAuthFromRequest } from "@/lib/auth";
+import sharp from "sharp";
+
+const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -55,9 +58,26 @@ export async function POST(request: NextRequest) {
       token: process.env.BLOB_READ_WRITE_TOKEN
     });
 
+    let thumbnail = null;
+    if (IMAGE_TYPES.includes(file.type)) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const thumbBuffer = await sharp(buffer)
+        .resize(800, 800, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      const thumbBlob = await put(`thumb-${filename}`, thumbBuffer, {
+        access: "public",
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+        contentType: "image/jpeg"
+      });
+      thumbnail = thumbBlob.url;
+    }
+
     return NextResponse.json({
       filename: file.name,
       filepath: blob.url,
+      thumbnail,
       mimetype: file.type,
       size: file.size
     });

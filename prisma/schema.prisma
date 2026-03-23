@@ -93,6 +93,7 @@ model Attachment {
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   filename   String
   filepath   String
+  thumbnail  String?
   mimetype   String
   size       Int
   createdAt  DateTime @default(now())
