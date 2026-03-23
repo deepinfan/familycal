@@ -41,6 +41,19 @@ export async function GET(
     return NextResponse.json({ error: "无权访问" }, { status: 403 });
   }
 
-  // 重定向到 Blob URL
-  return NextResponse.redirect(attachment.filepath);
+  // 检查 ETag
+  const etag = `"${attachment.id}"`;
+  const ifNoneMatch = request.headers.get('if-none-match');
+
+  if (ifNoneMatch === etag) {
+    return new NextResponse(null, { status: 304 });
+  }
+
+  // 重定向到 Blob URL，添加缓存头
+  return NextResponse.redirect(attachment.filepath, {
+    headers: {
+      'Cache-Control': 'private, max-age=3600',
+      'ETag': etag
+    }
+  });
 }
