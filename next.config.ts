@@ -45,6 +45,14 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   devIndicators: false,
+  async rewrites() {
+    return [
+      {
+        source: "/api/calendar/:key.ics",
+        destination: "/api/calendar/:key"
+      }
+    ];
+  },
   async headers() {
     return [
       {
