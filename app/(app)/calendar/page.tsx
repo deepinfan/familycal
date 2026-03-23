@@ -709,6 +709,18 @@ export default function CalendarPage() {
                     {day.getMonth() + 1}/{day.getDate()} {labels[day.getDay()]}
                   </span>
                 </div>
+                {dayEvents.length === 0 ? (
+                  <div className="week-notice" style={{ marginBottom: "1rem" }}>
+                    <span>{language === "zh" ? "这一天没有任务安排" : "No tasks scheduled for this day"}</span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost week-notice__create-btn"
+                      onClick={() => openCreateForm(key)}
+                    >
+                      {language === "zh" ? "创建任务" : "Add Task"}
+                    </button>
+                  </div>
+                ) : null}
                 <ul className="plain-list month-day-section__tasks">
                   {dayEvents.map((item) => {
                     const isIssuedByMe = item.issuedBy.id === currentRoleId;
