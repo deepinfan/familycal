@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { LlmAdapter, LlmParsedResult } from "./adapter";
-import { extractJsonObject, getLlmPrompt } from "./adapter";
+import { extractJsonArray, getLlmPrompt } from "./adapter";
 
 const outputSchema = z.object({
   title_zh: z.string().min(1),
@@ -32,7 +32,7 @@ export const deepseekAdapter: LlmAdapter = {
 
     const data = await resp.json();
     const content = data?.choices?.[0]?.message?.content ?? "";
-    const parsed = JSON.parse(extractJsonObject(content));
+    const parsed = JSON.parse(extractJsonArray(content));
     return outputSchema.parse(parsed);
   }
 };

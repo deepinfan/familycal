@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { LlmAdapter, LlmParsedResult } from "./adapter";
-import { extractJsonObject, getLlmPrompt } from "./adapter";
+import { extractJsonArray, getLlmPrompt } from "./adapter";
 
 const outputSchema = z.object({
   title_zh: z.string().min(1),
@@ -34,7 +34,7 @@ export const claudeAdapter: LlmAdapter = {
 
     const data = await resp.json();
     const text = data?.content?.find((item: { type?: string }) => item.type === "text")?.text ?? "";
-    const parsed = JSON.parse(extractJsonObject(text));
+    const parsed = JSON.parse(extractJsonArray(text));
     return outputSchema.parse(parsed);
   }
 };
