@@ -77,7 +77,21 @@ export default function DocumentsPage() {
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
+  function clearDocumentsCache() {
+    sessionStorage.removeItem('documents-cache');
+  }
+
   async function loadDocs() {
+    // Try to show cached data immediately
+    const cached = sessionStorage.getItem('documents-cache');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setData(parsed);
+      } catch {}
+    }
+
+    // Fetch fresh data in background
     const res = await fetch("/api/documents", {
       cache: "no-store",
       headers: {
@@ -93,6 +107,7 @@ export default function DocumentsPage() {
 
     const json = await res.json();
     setData(json);
+    sessionStorage.setItem('documents-cache', JSON.stringify(json));
 
     // Load attachments for expanded documents
     if (expandedDocIds.length > 0) {
@@ -415,6 +430,7 @@ export default function DocumentsPage() {
     setContent("# 新文档\n");
     setUploadedFiles([]);
     setCreateOpen(false);
+    clearDocumentsCache();
     await loadDocs();
   }
 
@@ -476,6 +492,7 @@ export default function DocumentsPage() {
 
     setEditingDocId("");
     setEditingDraft(null);
+    clearDocumentsCache();
     await loadDocs();
   }
 
@@ -493,6 +510,7 @@ export default function DocumentsPage() {
       setEditingDocId("");
       setEditingDraft(null);
     }
+    clearDocumentsCache();
     await loadDocs();
   }
 
