@@ -159,7 +159,8 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
       if (res.ok) {
         const json = await res.json();
         setSubscriptionKey(json.key || "");
-        setSettingsNote(t("linkCopied"));
+        setSettingsNote("密钥已重新生成");
+        setTimeout(() => setSettingsNote(""), 3000);
       }
     } finally {
       setLoadingKey(false);
@@ -170,6 +171,7 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
     const url = `${window.location.origin}/api/calendar/${subscriptionKey}.ics`;
     await navigator.clipboard.writeText(url);
     setSettingsNote(t("linkCopied"));
+    setTimeout(() => setSettingsNote(""), 3000);
   }
 
   useEffect(() => {
