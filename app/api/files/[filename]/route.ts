@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { join } from "path";
 import { getAuthFromRequest } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -16,7 +14,12 @@ export async function GET(
   const { filename } = await context.params;
 
   const attachment = await prisma.attachment.findFirst({
-    where: { filepath: `/uploads/${filename}` },
+    where: {
+      OR: [
+        { filepath: `/uploads/${filename}` },
+        { filepath: { contains: filename } }
+      ]
+    },
     include: {
       document: {
         include: {
@@ -38,17 +41,6 @@ export async function GET(
     return NextResponse.json({ error: "无权访问" }, { status: 403 });
   }
 
-  try {
-    const filepath = join(process.cwd(), "public", "uploads", filename);
-    const file = await readFile(filepath);
-
-    return new NextResponse(file, {
-      headers: {
-        "Content-Type": attachment.mimetype,
-        "Content-Disposition": `inline; filename="${encodeURIComponent(attachment.filename)}"`
-      }
-    });
-  } catch {
-    return NextResponse.json({ error: "文件读取失败" }, { status: 500 });
-  }
+  // 重定向到 Blob URL
+  return NextResponse.redirect(attachment.filepath);
 }
