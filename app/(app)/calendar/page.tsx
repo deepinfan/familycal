@@ -721,6 +721,38 @@ export default function CalendarPage() {
                     </button>
                   </div>
                 ) : null}
+                {creatingDateKey === key && dayEvents.length === 0 ? (
+                  <TaskCreateForm
+                    t={t}
+                    roles={roles}
+                    repeatOptions={repeatOptions}
+                    titleZh={createTitleZh}
+                    manualDate={createManualDate}
+                    manualTime={createManualTime}
+                    repeatCycle={createRepeatCycle}
+                    repeatUntil={createRepeatUntil}
+                    assigneeRoleIds={createAssigneeRoleIds}
+                    plain
+                    cancelLabel={language === "zh" ? "关闭" : "Close"}
+                    submitLabel={language === "zh" ? "创建任务" : "Create Task"}
+                    setTitleZh={setCreateTitleZh}
+                    setManualDate={setCreateManualDate}
+                    setManualTime={setCreateManualTime}
+                    setRepeatCycle={setCreateRepeatCycle}
+                    setRepeatUntil={setCreateRepeatUntil}
+                    onToggleAssignee={toggleCreateAssignee}
+                    onCancel={() => setCreatingDateKey("")}
+                    onSubmit={() => createEventForDay()}
+                    onEnableRepeat={() => {
+                      setCreateRepeatCycle("daily");
+                      setCreateRepeatUntil((prev) => prev || getTodayDateInput());
+                    }}
+                    onDisableRepeat={() => {
+                      setCreateRepeatCycle("none");
+                      setCreateRepeatUntil("");
+                    }}
+                  />
+                ) : null}
                 <ul className="plain-list month-day-section__tasks">
                   {dayEvents.map((item) => {
                     const isIssuedByMe = item.issuedBy.id === currentRoleId;
