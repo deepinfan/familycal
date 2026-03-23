@@ -468,7 +468,7 @@ export default function CalendarPage() {
               ))}
             </div>
 
-            {weekNotice || (creatingDateKey === activeDate && (weekSections.find((section) => section.key === activeDate)?.events.length ?? 0) === 0) ? (
+            {weekNotice || (weekSections.find((section) => section.key === activeDate)?.events.length ?? 0) === 0 ? (
               <div className="week-notice-wrap">
                 <div className="week-notice">
                   <span>{weekNotice || (language === "zh" ? "这一天没有任务安排" : "No tasks scheduled for this day")}</span>
