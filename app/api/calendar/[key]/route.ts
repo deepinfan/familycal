@@ -9,17 +9,17 @@ function generateICalendar(events: any[], roleId: string) {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:FamilyCal Tasks",
-    "X-WR-TIMEZONE:UTC",
-    "REFRESH-INTERVAL;VALUE=DURATION:PT10M",
-    "X-PUBLISHED-TTL:PT10M"
+    "X-WR-TIMEZONE:Asia/Shanghai",
+    "X-WR-CALDESC:FamilyCal task calendar"
   ];
 
   for (const event of events) {
     const uid = `${event.id}@familycal.app`;
     const dtstart = formatDateTime(event.datetime);
     const summary = event.titleZh || event.titleEn;
-    const dtstamp = formatDateTime(event.updatedAt);
+    const dtstamp = formatDateTime(new Date());
     const created = formatDateTime(event.createdAt);
+    const lastModified = formatDateTime(event.updatedAt);
 
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${uid}`);
@@ -27,8 +27,8 @@ function generateICalendar(events: any[], roleId: string) {
     lines.push(`DTSTART:${dtstart}`);
     lines.push(`SUMMARY:${escapeSummary(summary)}`);
     lines.push(`CREATED:${created}`);
+    lines.push(`LAST-MODIFIED:${lastModified}`);
     lines.push(`SEQUENCE:0`);
-    lines.push(`TRANSP:OPAQUE`);
 
     if (event.repeatCycle !== "none" && event.repeatUntil) {
       const rrule = generateRRule(event.repeatCycle, event.repeatUntil);
@@ -39,7 +39,7 @@ function generateICalendar(events: any[], roleId: string) {
   }
 
   lines.push("END:VCALENDAR");
-  return lines.join("\r\n");
+  return lines.join("\r\n") + "\r\n";
 }
 
 function formatDateTime(date: Date | string): string {
