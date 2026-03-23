@@ -12,7 +12,7 @@ type Role = {
 type DocumentItem = {
   id: string;
   title: string;
-  content: string;
+  content?: string;
   creator: Role;
   visibleRoles: Role[];
   attachments: Array<{
@@ -115,12 +115,30 @@ export default function DocumentsPage() {
     });
   }
 
-function toggleDoc(docId: string) {
+  async function toggleDoc(docId: string) {
+    const isExpanding = !expandedDocIds.includes(docId);
+
     setExpandedDocIds((prev) => {
       const next = prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId];
       localStorage.setItem("expandedDocIds", JSON.stringify(next));
       return next;
     });
+
+    if (isExpanding && data) {
+      const doc = data.documents.find(d => d.id === docId);
+      if (doc && !doc.content) {
+        const res = await fetch(`/api/documents/${docId}/content`);
+        if (res.ok) {
+          const json = await res.json();
+          setData(prev => prev ? {
+            ...prev,
+            documents: prev.documents.map(d =>
+              d.id === docId ? { ...d, content: json.content } : d
+            )
+          } : null);
+        }
+      }
+    }
   }
 
   function formatDocDate(value: string) {
