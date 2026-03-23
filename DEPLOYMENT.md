@@ -6,6 +6,108 @@
 
 ## 中文
 
+### Vercel 部署（推荐）
+
+#### 1. 准备工作
+
+- GitHub 账号
+- Vercel 账号（可使用 GitHub 登录）
+- 已 Fork 本项目到你的 GitHub
+
+#### 2. 创建 Vercel 项目
+
+1. 访问 [Vercel Dashboard](https://vercel.com/dashboard)
+2. 点击 "Add New Project"
+3. 选择你 Fork 的 `familycal` 仓库
+4. Framework Preset 会自动识别为 Next.js
+5. 点击 "Deploy"（先不配置环境变量，首次部署会失败，这是正常的）
+
+#### 3. 添加 Postgres 数据库
+
+1. 进入项目设置页面
+2. 点击 "Storage" 标签
+3. 点击 "Create Database"
+4. 选择 "Postgres"
+5. 选择区域（建议选择离用户最近的区域）
+6. 点击 "Create"
+
+Vercel 会自动添加以下环境变量：
+- `POSTGRES_PRISMA_URL`
+- `POSTGRES_URL_NON_POOLING`
+- `POSTGRES_URL`
+
+#### 4. 添加 Blob 存储
+
+1. 在 "Storage" 标签中
+2. 点击 "Create Store"
+3. 选择 "Blob"
+4. 点击 "Create"
+
+Vercel 会自动添加环境变量：
+- `BLOB_READ_WRITE_TOKEN`
+
+#### 5. 配置环境变量
+
+1. 进入项目设置
+2. 点击 "Environment Variables" 标签
+3. 添加以下变量：
+
+**必需变量：**
+```
+JWT_SECRET=<运行 scripts/generate-keys.sh 生成>
+SYSTEM_CONFIG_AES_KEY=<运行 scripts/generate-keys.sh 生成>
+APP_URL=https://your-app.vercel.app
+```
+
+**可选变量：**
+```
+OPENAI_API_KEY=<你的 OpenAI API Key>
+ANTHROPIC_API_KEY=<你的 Anthropic API Key>
+DEEPSEEK_API_KEY=<你的 DeepSeek API Key>
+VAPID_PUBLIC_KEY=<运行 web-push generate-vapid-keys 生成>
+VAPID_PRIVATE_KEY=<运行 web-push generate-vapid-keys 生成>
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+生成密钥命令：
+```bash
+# 克隆项目到本地
+git clone https://github.com/yourusername/familycal.git
+cd familycal
+
+# 生成 JWT 和 AES 密钥
+bash scripts/generate-keys.sh
+
+# 生成 VAPID 密钥（可选）
+npm install -g web-push
+web-push generate-vapid-keys
+```
+
+#### 6. 重新部署
+
+1. 在 Vercel Dashboard 点击 "Deployments" 标签
+2. 点击最新部署右侧的三个点
+3. 选择 "Redeploy"
+4. 等待部署完成
+
+#### 7. 初始化数据
+
+部署成功后，数据库会自动运行迁移。访问你的应用 URL：
+
+- 默认管理员账号：`admin`
+- 默认密码：`admin123`
+
+**⚠️ 首次登录后请立即修改密码！**
+
+#### 8. 自定义域名（可选）
+
+1. 在项目设置中点击 "Domains"
+2. 添加你的自定义域名
+3. 按照提示配置 DNS
+4. 更新环境变量 `APP_URL` 为你的自定义域名
+
+---
+
 ### VPS 服务器部署
 
 #### 1. 服务器要求
@@ -165,6 +267,108 @@ pm2 restart familycal
 ---
 
 ## English
+
+### Vercel Deployment (Recommended)
+
+#### 1. Prerequisites
+
+- GitHub account
+- Vercel account (can sign in with GitHub)
+- Fork this project to your GitHub
+
+#### 2. Create Vercel Project
+
+1. Visit [Vercel Dashboard](https://vercel.com/dashboard)
+2. Click "Add New Project"
+3. Select your forked `familycal` repository
+4. Framework Preset will auto-detect as Next.js
+5. Click "Deploy" (first deployment will fail without env vars, this is expected)
+
+#### 3. Add Postgres Database
+
+1. Go to project settings
+2. Click "Storage" tab
+3. Click "Create Database"
+4. Select "Postgres"
+5. Choose region (select closest to your users)
+6. Click "Create"
+
+Vercel will automatically add these environment variables:
+- `POSTGRES_PRISMA_URL`
+- `POSTGRES_URL_NON_POOLING`
+- `POSTGRES_URL`
+
+#### 4. Add Blob Storage
+
+1. In "Storage" tab
+2. Click "Create Store"
+3. Select "Blob"
+4. Click "Create"
+
+Vercel will automatically add:
+- `BLOB_READ_WRITE_TOKEN`
+
+#### 5. Configure Environment Variables
+
+1. Go to project settings
+2. Click "Environment Variables" tab
+3. Add the following:
+
+**Required:**
+```
+JWT_SECRET=<generate with scripts/generate-keys.sh>
+SYSTEM_CONFIG_AES_KEY=<generate with scripts/generate-keys.sh>
+APP_URL=https://your-app.vercel.app
+```
+
+**Optional:**
+```
+OPENAI_API_KEY=<your OpenAI API Key>
+ANTHROPIC_API_KEY=<your Anthropic API Key>
+DEEPSEEK_API_KEY=<your DeepSeek API Key>
+VAPID_PUBLIC_KEY=<generate with web-push>
+VAPID_PRIVATE_KEY=<generate with web-push>
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+Generate keys:
+```bash
+# Clone project locally
+git clone https://github.com/yourusername/familycal.git
+cd familycal
+
+# Generate JWT and AES keys
+bash scripts/generate-keys.sh
+
+# Generate VAPID keys (optional)
+npm install -g web-push
+web-push generate-vapid-keys
+```
+
+#### 6. Redeploy
+
+1. In Vercel Dashboard, click "Deployments" tab
+2. Click three dots on latest deployment
+3. Select "Redeploy"
+4. Wait for deployment to complete
+
+#### 7. Initialize Data
+
+After successful deployment, database migrations run automatically. Visit your app URL:
+
+- Default admin account: `admin`
+- Default password: `admin123`
+
+**⚠️ Change password immediately after first login!**
+
+#### 8. Custom Domain (Optional)
+
+1. In project settings, click "Domains"
+2. Add your custom domain
+3. Configure DNS as instructed
+4. Update `APP_URL` environment variable to your custom domain
+
+---
 
 ### VPS Server Deployment
 

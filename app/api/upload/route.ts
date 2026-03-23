@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join, extname } from "path";
-import { existsSync } from "fs";
+import { put } from "@vercel/blob";
+import { extname } from "path";
 import { getAuthFromRequest } from "@/lib/auth";
 
 const ALLOWED_TYPES = [
@@ -47,24 +46,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "不支持的文件扩展名" }, { status: 400 });
     }
 
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
     const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const filename = `${timestamp}-${safeName}`;
-    const filepath = join(uploadDir, filename);
 
-    await writeFile(filepath, buffer);
+    const blob = await put(filename, file, {
+      access: "public",
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
 
     return NextResponse.json({
       filename: file.name,
-      filepath: `/uploads/${filename}`,
+      filepath: blob.url,
       mimetype: file.type,
       size: file.size
     });

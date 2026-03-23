@@ -74,6 +74,11 @@ datasource db {
 }
 ```
 
+**连接池说明：**
+- `POSTGRES_PRISMA_URL`：使用 Vercel 的连接池，适用于 Serverless Functions 的短连接场景
+- `POSTGRES_URL_NON_POOLING`：直连数据库，用于 Prisma 迁移等需要直接访问的操作
+- Vercel 自动管理连接池，无需手动配置
+
 ### 3.2 数据类型兼容性
 
 | SQLite 类型 | PostgreSQL 类型 | 兼容性 |
@@ -90,7 +95,18 @@ Prisma 会自动处理类型转换，无需手动调整。
 1. 修改 `prisma/schema.prisma` 的 provider
 2. 删除旧的 SQLite 迁移文件
 3. 生成新的 PostgreSQL 迁移：`npx prisma migrate dev --name init_postgres`
-4. 在 Vercel 部署时自动运行迁移
+4. 在 Vercel 部署时运行 `prisma migrate deploy`
+
+### 3.4 数据迁移策略
+
+**注意：** 这是全新部署，不需要迁移现有数据。
+
+如果需要保留现有数据：
+1. 导出 SQLite 数据：`sqlite3 dev.db .dump > backup.sql`
+2. 转换为 PostgreSQL 格式（手动调整语法差异）
+3. 在 Vercel Postgres 中导入数据
+
+**推荐方案：** 全新部署，使用 seed 脚本初始化数据。
 
 
 ---
@@ -129,8 +145,31 @@ const blob = await put(filename, file, {
 - 返回文件流
 
 **迁移后实现：**
-- 直接使用 Blob URL（公开文件）
-- 或生成带签名的临时 URL（私有文件）
+
+**方案 A（推荐）：** 公开访问 + 不可猜测的文件名
+- 上传时使用 `access: 'public'` 和随机 UUID 文件名
+- Blob URL 包含随机 token，实际上无法被猜测
+- 无需额外权限验证，简化架构
+- 适用于家庭场景，文件不包含高度敏感信息
+
+**方案 B：** 保留权限验证
+- 上传时使用 `access: 'public'`
+- 保留 `/api/files/[filename]` API
+- 验证用户登录状态后重定向到 Blob URL
+- 适用于需要严格权限控制的场景
+
+**本项目采用方案 A**，因为：
+1. 家庭使用场景，安全要求适中
+2. Blob URL 本身包含随机 token，难以猜测
+3. 简化架构，减少 API 调用开销
+
+### 4.4 现有文件迁移
+
+**注意：** 这是全新部署，`public/uploads/` 目录为空。
+
+如果有现有文件需要迁移：
+1. 使用脚本批量上传到 Vercel Blob
+2. 更新数据库中的文件路径为 Blob URL
 
 
 ---
@@ -173,6 +212,29 @@ echo "JWT_SECRET=$(openssl rand -base64 32)"
 echo "SYSTEM_CONFIG_AES_KEY=$(openssl rand -hex 32)"
 ```
 
+### 5.4 VAPID 密钥生成
+
+VAPID 密钥用于 Web Push 通知，生成方法：
+
+```bash
+# 安装 web-push 工具
+npm install -g web-push
+
+# 生成 VAPID 密钥对
+web-push generate-vapid-keys
+
+# 输出示例：
+# Public Key: BEl62iUYgUivxIkv69yViEuiBIa...
+# Private Key: bdSiGcHIxSk-5...
+```
+
+将生成的密钥添加到 Vercel 环境变量：
+```
+VAPID_PUBLIC_KEY=<生成的公钥>
+VAPID_PRIVATE_KEY=<生成的私钥>
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
 
 ---
 
@@ -188,9 +250,11 @@ echo "SYSTEM_CONFIG_AES_KEY=$(openssl rand -hex 32)"
 ### 6.2 配置阶段
 
 1. 设置所有环境变量（见第5节）
-2. 配置构建命令：`prisma generate && next build`
+2. 配置构建命令：`prisma generate && prisma migrate deploy && next build`
 3. 配置输出目录：`.next`
 4. 配置 Node.js 版本：18.x
+
+**说明：** `prisma migrate deploy` 在构建时自动执行数据库迁移，确保数据库 schema 与代码同步。
 
 ### 6.3 首次部署
 
@@ -270,9 +334,15 @@ echo "SYSTEM_CONFIG_AES_KEY=$(openssl rand -hex 32)"
 
 | 服务 | 免费额度 | 预估使用 | 风险等级 |
 |------|---------|---------|---------|
-| Vercel Postgres | 60小时/月 | <10小时/月 | 低 |
+| Vercel Postgres | 60小时计算时间/月 | <10小时/月 | 低 |
 | Vercel Blob | 1GB存储 | <100MB | 低 |
 | Serverless Functions | 100GB-小时 | <10GB-小时 | 低 |
+
+**Postgres 计算时间说明：**
+- 60小时/月 = 每天约2小时活跃时间
+- 数据库在无活动时自动休眠，不计费
+- 家庭使用场景：每天活跃时间 < 1小时
+- 查询响应快（毫秒级），60小时足够支撑数千次请求
 
 **结论：** 家庭使用场景下，不会超出免费额度。
 
@@ -281,6 +351,24 @@ echo "SYSTEM_CONFIG_AES_KEY=$(openssl rand -hex 32)"
 - **数据库迁移：** 低风险，Prisma 自动处理
 - **文件存储：** 低风险，API 简单
 - **部署配置：** 低风险，Vercel 自动化程度高
+
+### 9.3 回滚方案
+
+**部署失败回滚：**
+- Vercel 自动保留上一个成功部署版本
+- 部署失败时自动回滚到上一版本
+- 可在 Vercel Dashboard 手动回滚到任意历史版本
+
+**数据库回滚：**
+- 使用 `prisma migrate resolve --rolled-back <migration_name>` 标记迁移为已回滚
+- 手动执行反向 SQL 操作（如果需要）
+- 建议：部署前在预览环境充分测试，避免生产环境回滚
+
+**完全回滚到 VPS：**
+1. 在 Vercel Dashboard 停用项目
+2. 恢复 VPS 部署（保留原有代码和数据库）
+3. 更新 DNS 指向 VPS
+4. 从 Vercel Postgres 导出数据（如有必要）
 
 ---
 
