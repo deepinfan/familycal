@@ -237,13 +237,29 @@ export default function DocumentsPage() {
     await loadDocs();
   }
 
-  function startEdit(doc: DocumentItem) {
+  async function startEdit(doc: DocumentItem) {
     setEditingDocId(doc.id);
     setDeleteDocId("");
     setExpandedDocIds((prev) => (prev.includes(doc.id) ? prev : [...prev, doc.id]));
+
+    let content = doc.content;
+    if (!content) {
+      const res = await fetch(`/api/documents/${doc.id}/content`);
+      if (res.ok) {
+        const json = await res.json();
+        content = json.content;
+        setData(prev => prev ? {
+          ...prev,
+          documents: prev.documents.map(d =>
+            d.id === doc.id ? { ...d, content } : d
+          )
+        } : null);
+      }
+    }
+
     setEditingDraft({
       title: doc.title,
-      content: doc.content,
+      content: content || "",
       visibleAll: false,
       visibleRoleIds: doc.visibleRoles.map((role) => role.id),
       attachments: doc.attachments,
