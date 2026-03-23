@@ -1021,10 +1021,10 @@ textarea:focus {
 }
 
 .choice-card--active {
-  border-color: rgba(236, 72, 153, 0.34);
-  background: linear-gradient(180deg, rgba(236, 72, 153, 0.92), rgba(219, 39, 119, 0.94));
-  color: #fff8fb;
-  box-shadow: 0 12px 30px rgba(236, 72, 153, 0.22);
+  border-color: var(--primary-light);
+  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  box-shadow: 0 12px 30px var(--primary-shadow);
 }
 
 .app-header {
