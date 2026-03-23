@@ -134,7 +134,15 @@ const messages = {
     createdBy: "创建人",
     visibleRange: "可见范围",
     updateFailed: "更新失败",
-    deleteDocConfirm: "确认删除《{title}》？"
+    deleteDocConfirm: "确认删除《{title}》？",
+    calendarSync: "日历同步",
+    calendarSyncDesc: "将任务同步到 iPhone 日历",
+    subscriptionUrl: "订阅链接",
+    copyLink: "复制链接",
+    regenerateKey: "重新生成",
+    linkCopied: "链接已复制",
+    iphoneInstructions: "在 iPhone 日历 App 中：设置 → 账户 → 添加账户 → 其他 → 添加已订阅的日历 → 粘贴上方链接",
+    regenerateConfirm: "重新生成将使旧链接失效，确认？"
   },
   en: {
     homecal: "HomeCal",
@@ -265,7 +273,15 @@ const messages = {
     createdBy: "Created by",
     visibleRange: "Visible to",
     updateFailed: "Update failed",
-    deleteDocConfirm: "Delete \"{title}\"?"
+    deleteDocConfirm: "Delete \"{title}\"?",
+    calendarSync: "Calendar Sync",
+    calendarSyncDesc: "Sync tasks to iPhone Calendar",
+    subscriptionUrl: "Subscription URL",
+    copyLink: "Copy Link",
+    regenerateKey: "Regenerate",
+    linkCopied: "Link copied",
+    iphoneInstructions: "In iPhone Calendar app: Settings → Accounts → Add Account → Other → Add Subscribed Calendar → Paste the link above",
+    regenerateConfirm: "Regenerating will invalidate the old link. Confirm?"
   }
 } as const;
 

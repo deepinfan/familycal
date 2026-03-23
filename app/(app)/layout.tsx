@@ -33,6 +33,8 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
   const [newPassword, setNewPassword] = useState("");
   const [settingsError, setSettingsError] = useState("");
   const [settingsNote, setSettingsNote] = useState("");
+  const [subscriptionKey, setSubscriptionKey] = useState("");
+  const [loadingKey, setLoadingKey] = useState(false);
   const { language, setLanguage, appTitle, t } = useLanguage();
   const themeOptions: Array<{ value: AppTheme; label: string; className: string }> = [
     { value: "teal", label: t("themeTeal"), className: "theme-swatch--teal" },
@@ -135,6 +137,46 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
     setNewPassword("");
     setSettingsNote(t("passwordUpdated"));
   }
+
+  async function loadSubscriptionKey() {
+    setLoadingKey(true);
+    try {
+      const res = await fetch("/api/calendar/subscription-key");
+      if (res.ok) {
+        const json = await res.json();
+        setSubscriptionKey(json.key || "");
+      }
+    } finally {
+      setLoadingKey(false);
+    }
+  }
+
+  async function regenerateSubscriptionKey() {
+    if (!confirm(t("regenerateConfirm"))) return;
+    setLoadingKey(true);
+    try {
+      const res = await fetch("/api/calendar/subscription-key", { method: "POST" });
+      if (res.ok) {
+        const json = await res.json();
+        setSubscriptionKey(json.key || "");
+        setSettingsNote(t("linkCopied"));
+      }
+    } finally {
+      setLoadingKey(false);
+    }
+  }
+
+  async function copySubscriptionLink() {
+    const url = `${window.location.origin}/api/calendar/${subscriptionKey}`;
+    await navigator.clipboard.writeText(url);
+    setSettingsNote(t("linkCopied"));
+  }
+
+  useEffect(() => {
+    if (settingsOpen && !subscriptionKey) {
+      loadSubscriptionKey();
+    }
+  }, [settingsOpen]);
 
   function changeTheme(nextTheme: AppTheme) {
     setTheme(nextTheme);
@@ -260,6 +302,38 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
                   {t("newPassword")}
                 </div>
                 <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              </label>
+
+              <label>
+                <div className="eyebrow" style={{ marginBottom: 8 }}>
+                  {t("calendarSync")}
+                </div>
+                <div style={{ fontSize: "0.9rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
+                  {t("calendarSyncDesc")}
+                </div>
+                {loadingKey ? (
+                  <div className="inline-note">加载中...</div>
+                ) : subscriptionKey ? (
+                  <>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${window.location.origin}/api/calendar/${subscriptionKey}`}
+                      style={{ marginBottom: "0.5rem" }}
+                    />
+                    <div className="btn-row" style={{ marginBottom: "0.5rem" }}>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={copySubscriptionLink}>
+                        {t("copyLink")}
+                      </button>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={regenerateSubscriptionKey}>
+                        {t("regenerateKey")}
+                      </button>
+                    </div>
+                    <div style={{ fontSize: "0.85rem", color: "var(--muted)", lineHeight: "1.6" }}>
+                      {t("iphoneInstructions")}
+                    </div>
+                  </>
+                ) : null}
               </label>
 
               {settingsError ? <div className="error-note">{settingsError}</div> : null}
