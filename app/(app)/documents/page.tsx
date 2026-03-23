@@ -7,6 +7,7 @@ import { useLanguage } from "../language-context";
 type Role = {
   id: string;
   name: string;
+  nameEn: string;
 };
 
 type DocumentItem = {
@@ -137,6 +138,10 @@ export default function DocumentsPage() {
   }, [data?.documents.length, expandedDocIds.length]);
 
   const roles = useMemo(() => data?.roles ?? [], [data]);
+
+  function displayRoleName(role: Role) {
+    return language === "en" && role.nameEn ? role.nameEn : role.name;
+  }
 
   function toggleVisible(roleId: string) {
     setVisibleRoleIds((prev) =>
@@ -398,7 +403,7 @@ export default function DocumentsPage() {
                       style={{ width: 16, height: 16, padding: 0, margin: 0 }}
                     />
                     <span>
-                      {role.name}
+                      {displayRoleName(role)}
                     </span>
                   </label>
                 ))}
@@ -470,7 +475,7 @@ export default function DocumentsPage() {
               {expanded ? (
                 <div className="stack-card docs-entry__body">
                   <div className="task-card__meta docs-entry__meta">
-                    {t("visibleRange")}：{doc.visibleRoles.map((r) => r.name).join("、")}
+                    {t("visibleRange")}：{doc.visibleRoles.map((r) => displayRoleName(r)).join("、")}
                   </div>
 
                   {editing ? (

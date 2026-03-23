@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const [roles, documents] = await Promise.all([
       prisma.role.findMany({
         where: { isAdmin: false },
-        select: { id: true, name: true },
+        select: { id: true, name: true, nameEn: true },
         orderBy: { createdAt: "asc" }
       }),
       prisma.document.findMany({
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
           OR: [{ creatorId: auth.roleId }, { visibleTo: { some: { roleId: auth.roleId } } }]
         },
         include: {
-          creator: { select: { id: true, name: true } },
-          visibleTo: { include: { role: { select: { id: true, name: true } } } },
+          creator: { select: { id: true, name: true, nameEn: true } },
+          visibleTo: { include: { role: { select: { id: true, name: true, nameEn: true } } } },
           attachments: true
         },
         orderBy: { updatedAt: "desc" }
