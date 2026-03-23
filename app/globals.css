@@ -1022,10 +1022,14 @@ textarea:focus {
 
 .choice-card--active {
   border-color: var(--primary);
-  background: var(--primary);
-  color: #fff;
+  background: var(--primary) !important;
+  color: #fff !important;
   box-shadow: 0 4px 12px var(--primary-shadow);
   font-weight: 600;
+}
+
+.choice-card--active .login-role-name {
+  color: #fff !important;
 }
 
 .app-header {
