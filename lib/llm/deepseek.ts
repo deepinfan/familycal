@@ -13,7 +13,7 @@ const outputSchema = z.object({
 });
 
 export const deepseekAdapter: LlmAdapter = {
-  async parseTask(input, config, context): Promise<LlmParsedResult> {
+  async parseTask(input, config, context): Promise<LlmParsedResult[]> {
     const resp = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
       headers: {
@@ -33,6 +33,6 @@ export const deepseekAdapter: LlmAdapter = {
     const data = await resp.json();
     const content = data?.choices?.[0]?.message?.content ?? "";
     const parsed = JSON.parse(extractJsonArray(content));
-    return outputSchema.parse(parsed);
+    return z.array(outputSchema).parse(parsed);
   }
 };

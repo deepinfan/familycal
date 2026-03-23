@@ -13,7 +13,7 @@ const outputSchema = z.object({
 });
 
 export const claudeAdapter: LlmAdapter = {
-  async parseTask(input, config, context): Promise<LlmParsedResult> {
+  async parseTask(input, config, context): Promise<LlmParsedResult[]> {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -35,6 +35,6 @@ export const claudeAdapter: LlmAdapter = {
     const data = await resp.json();
     const text = data?.content?.find((item: { type?: string }) => item.type === "text")?.text ?? "";
     const parsed = JSON.parse(extractJsonArray(text));
-    return outputSchema.parse(parsed);
+    return z.array(outputSchema).parse(parsed);
   }
 };
