@@ -147,30 +147,43 @@ export default function DocumentsPage() {
     async function loadExpandedContents() {
       if (!data) return;
 
-      const docsNeedingContent = expandedDocIds.filter(docId => {
+      const docsNeedingData = expandedDocIds.map(docId => {
         const doc = data.documents.find(d => d.id === docId);
-        return doc && !doc.content;
+        return doc ? { docId, needsContent: !doc.content, needsAttachments: doc.attachments.length === 0 } : null;
+      }).filter(Boolean);
+
+      if (docsNeedingData.length === 0) return;
+
+      const promises = docsNeedingData.map(async (item) => {
+        if (!item) return null;
+        const [contentRes, attachRes] = await Promise.all([
+          item.needsContent ? fetch(`/api/documents/${item.docId}/content`, {
+            headers: { "Accept-Language": language === "zh" ? "zh-CN" : "en-US" }
+          }) : Promise.resolve(null),
+          item.needsAttachments ? fetch(`/api/documents/${item.docId}/attachments`) : Promise.resolve(null)
+        ]);
+
+        const [content, attachments] = await Promise.all([
+          contentRes?.ok ? contentRes.json().then(j => j.content) : null,
+          attachRes?.ok ? attachRes.json().then(j => j.attachments) : null
+        ]);
+
+        return { docId: item.docId, content, attachments };
       });
-
-      if (docsNeedingContent.length === 0) return;
-
-      const promises = docsNeedingContent.map(docId =>
-        fetch(`/api/documents/${docId}/content`, {
-          headers: {
-            "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
-          }
-        }).then(res => res.ok ? res.json().then(json => ({ docId, content: json.content })) : null)
-      );
 
       const results = await Promise.all(promises);
 
       setData(prev => {
         if (!prev) return null;
-        const updated = { ...prev };
+        let updated = { ...prev, documents: [...prev.documents] };
         results.forEach(result => {
           if (result) {
             updated.documents = updated.documents.map(d =>
-              d.id === result.docId ? { ...d, content: result.content } : d
+              d.id === result.docId ? {
+                ...d,
+                ...(result.content && { content: result.content }),
+                ...(result.attachments && { attachments: result.attachments })
+              } : d
             );
           }
         });
@@ -214,20 +227,37 @@ export default function DocumentsPage() {
 
     if (isExpanding && data) {
       const doc = data.documents.find(d => d.id === docId);
-      if (doc && !doc.content) {
-        const res = await fetch(`/api/documents/${docId}/content`, {
-          headers: {
-            "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
+      if (doc) {
+        // Load content if missing
+        if (!doc.content) {
+          const contentRes = await fetch(`/api/documents/${docId}/content`, {
+            headers: {
+              "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
+            }
+          });
+          if (contentRes.ok) {
+            const contentJson = await contentRes.json();
+            setData(prev => prev ? {
+              ...prev,
+              documents: prev.documents.map(d =>
+                d.id === docId ? { ...d, content: contentJson.content } : d
+              )
+            } : null);
           }
-        });
-        if (res.ok) {
-          const json = await res.json();
-          setData(prev => prev ? {
-            ...prev,
-            documents: prev.documents.map(d =>
-              d.id === docId ? { ...d, content: json.content } : d
-            )
-          } : null);
+        }
+
+        // Load attachments if empty
+        if (doc.attachments.length === 0) {
+          const attachRes = await fetch(`/api/documents/${docId}/attachments`);
+          if (attachRes.ok) {
+            const attachJson = await attachRes.json();
+            setData(prev => prev ? {
+              ...prev,
+              documents: prev.documents.map(d =>
+                d.id === docId ? { ...d, attachments: attachJson.attachments } : d
+              )
+            } : null);
+          }
         }
       }
     }
