@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { translateStatus, translateTaskType, useLanguage } from "./language-context";
+import { useEvents } from "./events-context";
 import { TaskCreateForm } from "./task-create-form";
 import { TaskEditForm } from "./task-edit-form";
 
@@ -107,8 +108,7 @@ function getStatusClass(status: EventItem["status"]) {
 export default function TasksPage() {
   const { language, t } = useLanguage();
   const searchParams = useSearchParams();
-  const [data, setData] = useState<EventsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { events, roles, currentRoleId, loading, error: loadError, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
   const [error, setError] = useState("");
 
   const [titleZh, setTitleZh] = useState("");
@@ -154,29 +154,11 @@ export default function TasksPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [creatingTask, setCreatingTask] = useState(false);
 
-  async function loadEvents() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/events", { cache: "no-store" });
-      if (!res.ok) {
-        throw new Error("加载任务失败");
-      }
-      const json = await res.json();
-      setData(json);
-      if (!issuedByRoleId && json.currentRoleId) {
-        setIssuedByRoleId(json.currentRoleId);
-      }
-    } catch {
-      setError("加载任务失败");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadEvents();
-  }, []);
+    if (!issuedByRoleId && currentRoleId) {
+      setIssuedByRoleId(currentRoleId);
+    }
+  }, [currentRoleId, issuedByRoleId]);
 
   useEffect(() => {
     const nextCreateMode = searchParams.get("create");
@@ -191,19 +173,17 @@ export default function TasksPage() {
   }, [searchParams, manualTime]);
 
   const mine = useMemo(() => {
-    if (!data) return [];
-    return [...data.events]
-      .filter((item) => item.assignees.some((a) => a.id === data.currentRoleId))
+    return [...events]
+      .filter((item) => item.assignees.some((a) => a.id === currentRoleId))
       .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-  }, [data]);
+  }, [events, currentRoleId]);
 
   const otherTasks = useMemo(() => {
-    if (!data) return [];
-    return [...data.events]
-      .filter((item) => item.issuedBy.id === data.currentRoleId)
-      .filter((item) => !item.assignees.some((a) => a.id === data.currentRoleId))
+    return [...events]
+      .filter((item) => item.issuedBy.id === currentRoleId)
+      .filter((item) => !item.assignees.some((a) => a.id === currentRoleId))
       .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-  }, [data]);
+  }, [events, currentRoleId]);
 
   const mineUnfinished = useMemo(() => mine.filter((item) => item.status !== "done"), [mine]);
   const mineDone = useMemo(() => mine.filter((item) => item.status === "done"), [mine]);
@@ -226,7 +206,7 @@ export default function TasksPage() {
     }
 
     const tempId = `temp-${Date.now()}`;
-    const currentRole = data?.roles.find(r => r.id === data.currentRoleId) || { id: data?.currentRoleId ?? "", name: "", nameEn: "" };
+    const currentRole = roles.find(r => r.id === currentRoleId) || { id: currentRoleId, name: "", nameEn: "" };
     const tempEvent: EventItem = {
       id: tempId,
       titleZh,
@@ -237,17 +217,12 @@ export default function TasksPage() {
       repeatUntil: repeatCycle === "none" ? null : dateInputToEndOfDayIso(repeatUntil),
       status: "pending",
       creator: currentRole,
-      issuedBy: data?.roles.find(r => r.id === issuedByRoleId) || currentRole,
-      assignees: data?.roles.filter(r => assigneeRoleIds.includes(r.id)) || [],
+      issuedBy: roles.find(r => r.id === issuedByRoleId) || currentRole,
+      assignees: roles.filter(r => assigneeRoleIds.includes(r.id)),
       isSaving: true
     };
 
-    setData(prev => prev ? {
-      ...prev,
-      events: [...prev.events, tempEvent].sort((a, b) =>
-        new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
-      )
-    } : prev);
+    addEvent(tempEvent);
 
     setCreatingTask(true);
     const res = await fetch("/api/events", {
@@ -269,19 +244,13 @@ export default function TasksPage() {
     setCreatingTask(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      setData(prev => prev ? {
-        ...prev,
-        events: prev.events.filter(e => e.id !== tempId)
-      } : prev);
+      removeEvent(tempId);
       setError(json.error ?? "创建任务失败");
       return;
     }
 
     const json = await res.json();
-    setData(prev => prev ? {
-      ...prev,
-      events: prev.events.map(e => e.id === tempId ? json.event : e)
-    } : prev);
+    modifyEvent(tempId, json.event);
 
     setTitleZh("");
     setTitleEn("");
@@ -291,7 +260,7 @@ export default function TasksPage() {
     setType(EVENT_TYPES[0]);
     setRepeatCycle("none");
     setRepeatUntil(getTodayDateInput());
-    setIssuedByRoleId(data?.currentRoleId ?? "");
+    setIssuedByRoleId(currentRoleId);
     setAssigneeRoleIds([]);
     setConfirmingParsedTask(false);
     setNlInput("");
@@ -322,9 +291,9 @@ export default function TasksPage() {
 
         let assigneeIds: string[] = [];
         if (parsed.assignee === "all") {
-          assigneeIds = (data?.roles ?? []).map((role) => role.id);
-        } else if (data && parsed.assignee) {
-          const target = data.roles.find((r) => r.id === parsed.assignee);
+          assigneeIds = roles.map((role) => role.id);
+        } else if (parsed.assignee) {
+          const target = roles.find((r) => r.id === parsed.assignee);
           if (target) {
             assigneeIds = [target.id];
           }
@@ -346,7 +315,7 @@ export default function TasksPage() {
       });
 
       setParsedTasks(tasks);
-      setIssuedByRoleId(data?.currentRoleId ?? "");
+      setIssuedByRoleId(currentRoleId);
       setConfirmingParsedTask(true);
       setCreateMode("nl");
     } finally {
@@ -369,7 +338,8 @@ export default function TasksPage() {
       return;
     }
 
-    await loadEvents();
+    const json = await res.json();
+    modifyEvent(eventId, json.event);
     setCompletingTaskId("");
   }
 
@@ -416,8 +386,9 @@ export default function TasksPage() {
       return;
     }
 
+    const json = await res.json();
+    modifyEvent(item.id, json.event);
     setEditingEventId("");
-    await loadEvents();
   }
 
   async function deleteEvent(eventId: string) {
@@ -429,7 +400,7 @@ export default function TasksPage() {
       setDeletingTaskId("");
       return;
     }
-    await loadEvents();
+    removeEvent(eventId);
     setDeletingTaskId("");
   }
 
@@ -462,12 +433,12 @@ export default function TasksPage() {
     setManualTime(next.time || "08:00");
     setCreateMode("manual");
     setConfirmingParsedTask(false);
-    setIssuedByRoleId((prev) => prev || data?.currentRoleId || "");
+    setIssuedByRoleId((prev) => prev || currentRoleId);
   }
 
   function renderCard(item: EventItem, showAssignee: boolean) {
-    const isCreator = item.creator.id === data?.currentRoleId;
-    const isAssignee = item.assignees.some((a) => a.id === data?.currentRoleId);
+    const isCreator = item.creator.id === currentRoleId;
+    const isAssignee = item.assignees.some((a) => a.id === currentRoleId);
     const isEditing = editingEventId === item.id;
     const isSelected = selectedTaskId === item.id;
 
@@ -521,7 +492,7 @@ export default function TasksPage() {
           <TaskEditForm
             language={language}
             t={t}
-            roles={data?.roles ?? []}
+            roles={roles}
             eventTypes={EVENT_TYPES}
             repeatOptions={repeatOptions}
             titleZh={editTitleZh}
@@ -581,7 +552,7 @@ export default function TasksPage() {
           ) : (
             <TaskCreateForm
               t={t}
-              roles={data?.roles ?? []}
+              roles={roles}
               repeatOptions={repeatOptions}
               titleZh={titleZh}
               manualDate={manualDate}
@@ -621,7 +592,7 @@ export default function TasksPage() {
                 <TaskCreateForm
                   key={index}
                   t={t}
-                  roles={data?.roles ?? []}
+                  roles={roles}
                   repeatOptions={repeatOptions}
                   titleZh={task.titleZh}
                   manualDate={task.manualDate}
@@ -679,7 +650,7 @@ export default function TasksPage() {
                     }
 
                     const tempId = `temp-${Date.now()}-${index}`;
-                    const currentRole = data?.roles.find(r => r.id === data.currentRoleId) || { id: data?.currentRoleId ?? "", name: "", nameEn: "" };
+                    const currentRole = roles.find(r => r.id === currentRoleId) || { id: currentRoleId, name: "", nameEn: "" };
                     const tempEvent: EventItem = {
                       id: tempId,
                       titleZh: task.titleZh,
@@ -690,17 +661,12 @@ export default function TasksPage() {
                       repeatUntil: task.repeatCycle === "none" ? null : dateInputToEndOfDayIso(task.repeatUntil),
                       status: "pending",
                       creator: currentRole,
-                      issuedBy: data?.roles.find(r => r.id === issuedByRoleId) || currentRole,
-                      assignees: data?.roles.filter(r => task.assigneeRoleIds.includes(r.id)) || [],
+                      issuedBy: roles.find(r => r.id === issuedByRoleId) || currentRole,
+                      assignees: roles.filter(r => task.assigneeRoleIds.includes(r.id)),
                       isSaving: true
                     };
 
-                    setData(prev => prev ? {
-                      ...prev,
-                      events: [...prev.events, tempEvent].sort((a, b) =>
-                        new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
-                      )
-                    } : prev);
+                    addEvent(tempEvent);
 
                     setCreatingTask(true);
                     const res = await fetch("/api/events", {
@@ -722,19 +688,13 @@ export default function TasksPage() {
                     setCreatingTask(false);
                     if (!res.ok) {
                       const json = await res.json().catch(() => ({}));
-                      setData(prev => prev ? {
-                        ...prev,
-                        events: prev.events.filter(e => e.id !== tempId)
-                      } : prev);
+                      removeEvent(tempId);
                       setError(json.error ?? "创建任务失败");
                       return;
                     }
 
                     const json = await res.json();
-                    setData(prev => prev ? {
-                      ...prev,
-                      events: prev.events.map(e => e.id === tempId ? json.event : e)
-                    } : prev);
+                    modifyEvent(tempId, json.event);
 
                     setParsedTasks((prev) => prev.filter((_, i) => i !== index));
                     if (parsedTasks.length === 1) {
