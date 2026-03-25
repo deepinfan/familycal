@@ -150,6 +150,7 @@ export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [completingTaskId, setCompletingTaskId] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   async function loadEvents() {
     setLoading(true);
@@ -353,6 +354,7 @@ export default function TasksPage() {
       return;
     }
 
+    setSavingEdit(true);
     const res = await fetch(`/api/events/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -370,6 +372,7 @@ export default function TasksPage() {
       })
     });
 
+    setSavingEdit(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setError(json.error ?? "修改失败");
@@ -492,6 +495,7 @@ export default function TasksPage() {
             repeatUntil={editRepeatUntil}
             assigneeRoleIds={editAssigneeRoleIds}
             deleting={deletingTaskId === item.id}
+            saving={savingEdit}
             setTitleZh={setEditTitleZh}
             setTitleEn={setEditTitleEn}
             setDatetime={setEditDatetime}

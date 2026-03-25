@@ -615,6 +615,7 @@ export default function CalendarPage() {
                               repeatUntil={editRepeatUntil}
                               assigneeRoleIds={editAssigneeRoleIds}
                               deleting={deletingTaskId === item.id}
+                              saving={savingEdit}
                               setTitleZh={setEditTitleZh}
                               setTitleEn={setEditTitleEn}
                               setDatetime={setEditDatetime}
@@ -751,6 +752,7 @@ export default function CalendarPage() {
                             repeatUntil={editRepeatUntil}
                             assigneeRoleIds={editAssigneeRoleIds}
                             deleting={deletingTaskId === item.id}
+                            saving={savingEdit}
                             setTitleZh={setEditTitleZh}
                             setTitleEn={setEditTitleEn}
                             setDatetime={setEditDatetime}

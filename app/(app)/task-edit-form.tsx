@@ -28,6 +28,7 @@ type Props = {
   repeatUntil: string;
   assigneeRoleIds: string[];
   deleting?: boolean;
+  saving?: boolean;
   setTitleZh: (value: string) => void;
   setTitleEn: (value: string) => void;
   setDatetime: (value: string) => void;
@@ -54,6 +55,7 @@ export function TaskEditForm({
   repeatUntil,
   assigneeRoleIds,
   deleting = false,
+  saving = false,
   setTitleZh,
   setTitleEn,
   setDatetime,
@@ -128,8 +130,8 @@ export function TaskEditForm({
       </div>
 
       <div className="btn-row">
-        <button type="button" className="btn btn-primary btn-sm" onClick={onSave}>
-          {t("saveChanges")}
+        <button type="button" className="btn btn-primary btn-sm" onClick={onSave} disabled={saving}>
+          {saving ? (language === "zh" ? "保存中..." : "Saving...") : t("saveChanges")}
         </button>
         {onDelete ? (
           <button type="button" className="btn btn-danger btn-sm" onClick={onDelete} disabled={deleting}>
