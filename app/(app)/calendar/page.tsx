@@ -257,7 +257,7 @@ export default function CalendarPage() {
       status: "pending",
       creator: currentRole,
       issuedBy: currentRole,
-      assignees: roles.filter(r => createAssigneeRoleIds.includes(r.id)),
+      assignees: roles.filter(r => createAssigneeRoleIds.includes(r.id)).map(r => ({ ...r, nameEn: "" })),
       isSaving: true
     };
 
