@@ -27,6 +27,7 @@ type Props = {
   repeatCycle: RepeatCycle;
   repeatUntil: string;
   assigneeRoleIds: string[];
+  deleting?: boolean;
   setTitleZh: (value: string) => void;
   setTitleEn: (value: string) => void;
   setDatetime: (value: string) => void;
@@ -52,6 +53,7 @@ export function TaskEditForm({
   repeatCycle,
   repeatUntil,
   assigneeRoleIds,
+  deleting = false,
   setTitleZh,
   setTitleEn,
   setDatetime,
@@ -130,8 +132,8 @@ export function TaskEditForm({
           {t("saveChanges")}
         </button>
         {onDelete ? (
-          <button type="button" className="btn btn-danger btn-sm" onClick={onDelete}>
-            {t("delete")}
+          <button type="button" className="btn btn-danger btn-sm" onClick={onDelete} disabled={deleting}>
+            {deleting ? (language === "zh" ? "删除中..." : "Deleting...") : t("delete")}
           </button>
         ) : null}
         <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>

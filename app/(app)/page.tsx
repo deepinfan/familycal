@@ -148,6 +148,8 @@ export default function TasksPage() {
   const [mineExpanded, setMineExpanded] = useState(true);
   const [arrangedExpanded, setArrangedExpanded] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [completingTaskId, setCompletingTaskId] = useState("");
+  const [deletingTaskId, setDeletingTaskId] = useState("");
 
   async function loadEvents() {
     setLoading(true);
@@ -315,6 +317,7 @@ export default function TasksPage() {
   }
 
   async function updateStatus(eventId: string, status: "done" | "cancelled") {
+    setCompletingTaskId(eventId);
     const res = await fetch(`/api/events/${eventId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -324,10 +327,12 @@ export default function TasksPage() {
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setError(json.error ?? "更新状态失败");
+      setCompletingTaskId("");
       return;
     }
 
     await loadEvents();
+    setCompletingTaskId("");
   }
 
   async function editEvent(item: EventItem) {
@@ -376,13 +381,16 @@ export default function TasksPage() {
   }
 
   async function deleteEvent(eventId: string) {
+    setDeletingTaskId(eventId);
     const res = await fetch(`/api/events/${eventId}`, { method: "DELETE" });
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setError(json.error ?? "删除失败");
+      setDeletingTaskId("");
       return;
     }
     await loadEvents();
+    setDeletingTaskId("");
   }
 
   function toggleAssignee(roleId: string) {
@@ -448,8 +456,12 @@ export default function TasksPage() {
         <div className={`btn-row task-card__actions${isSelected ? " task-card__actions--visible" : ""}`} style={{ marginTop: "0.9rem", flexWrap: "nowrap", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {isAssignee ? (
-              <button onClick={(e) => { e.stopPropagation(); updateStatus(item.id, "done"); }} className="btn btn-primary btn-sm">
-                {t("finish")}
+              <button
+                onClick={(e) => { e.stopPropagation(); updateStatus(item.id, "done"); }}
+                className="btn btn-primary btn-sm"
+                disabled={completingTaskId === item.id}
+              >
+                {completingTaskId === item.id ? (language === "zh" ? "完成中..." : "Completing...") : t("finish")}
               </button>
             ) : null}
             {isCreator ? (
@@ -479,6 +491,7 @@ export default function TasksPage() {
             repeatCycle={editRepeatCycle}
             repeatUntil={editRepeatUntil}
             assigneeRoleIds={editAssigneeRoleIds}
+            deleting={deletingTaskId === item.id}
             setTitleZh={setEditTitleZh}
             setTitleEn={setEditTitleEn}
             setDatetime={setEditDatetime}

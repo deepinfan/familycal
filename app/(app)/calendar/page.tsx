@@ -135,6 +135,8 @@ export default function CalendarPage() {
   const [editAssigneeRoleIds, setEditAssigneeRoleIds] = useState<string[]>([]);
   const [savingEdit, setSavingEdit] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState("");
+  const [completingTaskId, setCompletingTaskId] = useState("");
+  const [deletingTaskId, setDeletingTaskId] = useState("");
 
   const repeatOptions = [
     { value: "none", label: t("repeatNone") },
@@ -165,6 +167,7 @@ export default function CalendarPage() {
       return;
     }
 
+    setCompletingTaskId(eventId);
     const res = await fetch(`/api/events/${eventId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -174,12 +177,14 @@ export default function CalendarPage() {
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setWeekNotice(json.error ?? (language === "zh" ? "更新任务状态失败" : "Failed to update task status"));
+      setCompletingTaskId("");
       return;
     }
 
     setEvents((prev) =>
       prev.map((item) => (item.id === eventId ? { ...item, status: nextStatus } : item))
     );
+    setCompletingTaskId("");
   }
 
   function openEditor(item: EventItem) {
@@ -305,14 +310,17 @@ export default function CalendarPage() {
   }
 
   async function deleteEvent(item: EventItem) {
+    setDeletingTaskId(item.id);
     const res = await fetch(`/api/events/${item.id}`, { method: "DELETE" });
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setWeekNotice(json.error ?? (language === "zh" ? "删除任务失败" : "Failed to delete task"));
+      setDeletingTaskId("");
       return;
     }
     setEditingEventId("");
     await loadEvents();
+    setDeletingTaskId("");
   }
 
   const grouped = useMemo(() => {
@@ -585,8 +593,9 @@ export default function CalendarPage() {
                                   type="button"
                                   className="btn btn-primary btn-sm"
                                   onClick={(e) => { e.stopPropagation(); updateStatus(item.id, item.status === "done" ? "pending" : "done"); }}
+                                  disabled={completingTaskId === item.id}
                                 >
-                                  {item.status === "done" ? (language === "zh" ? "取消完成" : "Undo") : (language === "zh" ? "完成" : "Done")}
+                                  {completingTaskId === item.id ? (language === "zh" ? "处理中..." : "Processing...") : (item.status === "done" ? (language === "zh" ? "取消完成" : "Undo") : (language === "zh" ? "完成" : "Done"))}
                                 </button>
                               ) : null}
                             </div>
@@ -605,6 +614,7 @@ export default function CalendarPage() {
                               repeatCycle={editRepeatCycle}
                               repeatUntil={editRepeatUntil}
                               assigneeRoleIds={editAssigneeRoleIds}
+                              deleting={deletingTaskId === item.id}
                               setTitleZh={setEditTitleZh}
                               setTitleEn={setEditTitleEn}
                               setDatetime={setEditDatetime}
@@ -719,8 +729,9 @@ export default function CalendarPage() {
                                 type="button"
                                 className="btn btn-primary btn-sm"
                                 onClick={(e) => { e.stopPropagation(); updateStatus(item.id, item.status === "done" ? "pending" : "done"); }}
+                                disabled={completingTaskId === item.id}
                               >
-                                {item.status === "done" ? (language === "zh" ? "取消完成" : "Undo") : (language === "zh" ? "完成" : "Done")}
+                                {completingTaskId === item.id ? (language === "zh" ? "处理中..." : "Processing...") : (item.status === "done" ? (language === "zh" ? "取消完成" : "Undo") : (language === "zh" ? "完成" : "Done"))}
                               </button>
                             ) : null}
                           </div>
@@ -739,6 +750,7 @@ export default function CalendarPage() {
                             repeatCycle={editRepeatCycle}
                             repeatUntil={editRepeatUntil}
                             assigneeRoleIds={editAssigneeRoleIds}
+                            deleting={deletingTaskId === item.id}
                             setTitleZh={setEditTitleZh}
                             setTitleEn={setEditTitleEn}
                             setDatetime={setEditDatetime}
