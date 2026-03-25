@@ -19,6 +19,7 @@ type EventItem = {
   creator: { id: string; name: string; nameEn: string };
   issuedBy: { id: string; name: string; nameEn: string };
   assignees: Array<{ id: string; name: string; nameEn: string }>;
+  isSaving?: boolean;
 };
 
 type EventsResponse = {
@@ -242,6 +243,27 @@ export default function CalendarPage() {
       return;
     }
 
+    const tempId = `temp-${Date.now()}`;
+    const currentRole = roles.find(r => r.id === currentRoleId) || { id: currentRoleId, name: "", nameEn: "" };
+    const tempEvent: EventItem = {
+      id: tempId,
+      titleZh: createTitleZh,
+      titleEn: "",
+      datetime: new Date(`${createManualDate}T${createManualTime}`).toISOString(),
+      type: createType,
+      repeatCycle: createRepeatCycle,
+      repeatUntil: createRepeatCycle === "none" ? null : new Date(`${createRepeatUntil}T23:59:59.999`).toISOString(),
+      status: "pending",
+      creator: currentRole,
+      issuedBy: currentRole,
+      assignees: roles.filter(r => createAssigneeRoleIds.includes(r.id)),
+      isSaving: true
+    };
+
+    setEvents(prev => [...prev, tempEvent].sort((a, b) =>
+      new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+    ));
+
     setCreatingTask(true);
     const res = await fetch("/api/events", {
       method: "POST",
@@ -261,12 +283,14 @@ export default function CalendarPage() {
     setCreatingTask(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
+      setEvents(prev => prev.filter(e => e.id !== tempId));
       setWeekNotice(json.error ?? (language === "zh" ? "创建任务失败" : "Failed to create task"));
       return;
     }
 
+    const json = await res.json();
+    setEvents(prev => prev.map(e => e.id === tempId ? json.event : e));
     setCreatingDateKey("");
-    await loadEvents();
   }
 
   async function saveEditedEvent(item: EventItem) {

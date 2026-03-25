@@ -24,6 +24,7 @@ type EventItem = {
   creator: Role;
   issuedBy: Role;
   assignees: Role[];
+  isSaving?: boolean;
 };
 
 type EventsResponse = {
@@ -224,6 +225,30 @@ export default function TasksPage() {
       return;
     }
 
+    const tempId = `temp-${Date.now()}`;
+    const currentRole = data?.roles.find(r => r.id === data.currentRoleId) || { id: data?.currentRoleId ?? "", name: "", nameEn: "" };
+    const tempEvent: EventItem = {
+      id: tempId,
+      titleZh,
+      titleEn,
+      datetime: new Date(effectiveDatetime).toISOString(),
+      type,
+      repeatCycle,
+      repeatUntil: repeatCycle === "none" ? null : dateInputToEndOfDayIso(repeatUntil),
+      status: "pending",
+      creator: currentRole,
+      issuedBy: data?.roles.find(r => r.id === issuedByRoleId) || currentRole,
+      assignees: data?.roles.filter(r => assigneeRoleIds.includes(r.id)) || [],
+      isSaving: true
+    };
+
+    setData(prev => prev ? {
+      ...prev,
+      events: [...prev.events, tempEvent].sort((a, b) =>
+        new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+      )
+    } : prev);
+
     setCreatingTask(true);
     const res = await fetch("/api/events", {
       method: "POST",
@@ -244,9 +269,19 @@ export default function TasksPage() {
     setCreatingTask(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
+      setData(prev => prev ? {
+        ...prev,
+        events: prev.events.filter(e => e.id !== tempId)
+      } : prev);
       setError(json.error ?? "创建任务失败");
       return;
     }
+
+    const json = await res.json();
+    setData(prev => prev ? {
+      ...prev,
+      events: prev.events.map(e => e.id === tempId ? json.event : e)
+    } : prev);
 
     setTitleZh("");
     setTitleEn("");
@@ -261,7 +296,6 @@ export default function TasksPage() {
     setConfirmingParsedTask(false);
     setNlInput("");
     setCreateMode("nl");
-    await loadEvents();
   }
 
   async function parseNaturalLanguage() {
@@ -644,6 +678,30 @@ export default function TasksPage() {
                       return;
                     }
 
+                    const tempId = `temp-${Date.now()}-${index}`;
+                    const currentRole = data?.roles.find(r => r.id === data.currentRoleId) || { id: data?.currentRoleId ?? "", name: "", nameEn: "" };
+                    const tempEvent: EventItem = {
+                      id: tempId,
+                      titleZh: task.titleZh,
+                      titleEn: task.titleEn,
+                      datetime: new Date(effectiveDatetime).toISOString(),
+                      type: task.type,
+                      repeatCycle: task.repeatCycle,
+                      repeatUntil: task.repeatCycle === "none" ? null : dateInputToEndOfDayIso(task.repeatUntil),
+                      status: "pending",
+                      creator: currentRole,
+                      issuedBy: data?.roles.find(r => r.id === issuedByRoleId) || currentRole,
+                      assignees: data?.roles.filter(r => task.assigneeRoleIds.includes(r.id)) || [],
+                      isSaving: true
+                    };
+
+                    setData(prev => prev ? {
+                      ...prev,
+                      events: [...prev.events, tempEvent].sort((a, b) =>
+                        new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+                      )
+                    } : prev);
+
                     setCreatingTask(true);
                     const res = await fetch("/api/events", {
                       method: "POST",
@@ -664,9 +722,19 @@ export default function TasksPage() {
                     setCreatingTask(false);
                     if (!res.ok) {
                       const json = await res.json().catch(() => ({}));
+                      setData(prev => prev ? {
+                        ...prev,
+                        events: prev.events.filter(e => e.id !== tempId)
+                      } : prev);
                       setError(json.error ?? "创建任务失败");
                       return;
                     }
+
+                    const json = await res.json();
+                    setData(prev => prev ? {
+                      ...prev,
+                      events: prev.events.map(e => e.id === tempId ? json.event : e)
+                    } : prev);
 
                     setParsedTasks((prev) => prev.filter((_, i) => i !== index));
                     if (parsedTasks.length === 1) {
@@ -674,7 +742,6 @@ export default function TasksPage() {
                       setNlInput("");
                       setCreateMode("nl");
                     }
-                    await loadEvents();
                   }}
                   onEnableRepeat={() => {
                     setParsedTasks((prev) => prev.map((t, i) =>
