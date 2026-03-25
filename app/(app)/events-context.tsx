@@ -54,7 +54,8 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       setEvents(json.events ?? []);
       setRoles(json.roles ?? []);
       setCurrentRoleId(json.currentRoleId ?? "");
-    } catch {
+    } catch (err) {
+      console.error('Failed to load events:', err);
       setError("加载任务失败");
     } finally {
       setLoading(false);
@@ -96,3 +97,5 @@ export function useEvents() {
   }
   return context;
 }
+
+export type { EventItem, Role };

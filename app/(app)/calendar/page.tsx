@@ -4,30 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { translateStatus, useLanguage, weekdayLabels } from "../language-context";
 import { TaskCreateForm } from "../task-create-form";
 import { TaskEditForm } from "../task-edit-form";
-import { useEvents } from "../events-context";
+import { useEvents, type EventItem, type Role } from "../events-context";
 
 const EVENT_TYPES = ["学习", "玩耍", "家务", "购物", "其他"];
-
-type EventItem = {
-  id: string;
-  titleZh: string;
-  titleEn: string;
-  datetime: string;
-  type: string;
-  repeatCycle: "none" | "daily" | "weekly" | "monthly" | "yearly";
-  repeatUntil: string | null;
-  status: string;
-  creator: { id: string; name: string; nameEn: string };
-  issuedBy: { id: string; name: string; nameEn: string };
-  assignees: Array<{ id: string; name: string; nameEn: string }>;
-  isSaving?: boolean;
-};
-
-type EventsResponse = {
-  currentRoleId: string;
-  roles: Array<{ id: string; name: string }>;
-  events: EventItem[];
-};
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -271,7 +250,8 @@ export default function CalendarPage() {
     }
 
     const json = await res.json();
-    modifyEvent(tempId, json.event);
+    removeEvent(tempId);
+    addEvent(json.event);
     setCreatingDateKey("");
   }
 

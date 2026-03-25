@@ -250,7 +250,8 @@ export default function TasksPage() {
     }
 
     const json = await res.json();
-    modifyEvent(tempId, json.event);
+    removeEvent(tempId);
+    addEvent(json.event);
 
     setTitleZh("");
     setTitleEn("");
@@ -694,7 +695,8 @@ export default function TasksPage() {
                     }
 
                     const json = await res.json();
-                    modifyEvent(tempId, json.event);
+                    removeEvent(tempId);
+                    addEvent(json.event);
 
                     setParsedTasks((prev) => prev.filter((_, i) => i !== index));
                     if (parsedTasks.length === 1) {
