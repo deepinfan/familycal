@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LanguageProvider, useLanguage } from "./language-context";
+import { EventsProvider } from "./events-context";
 
 type User = {
   id: string;
@@ -18,7 +19,9 @@ type AppTheme = "teal" | "ocean" | "rose" | "slate" | "amber" | "violet" | "mint
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <LanguageProvider>
-      <AppLayoutInner>{children}</AppLayoutInner>
+      <EventsProvider>
+        <AppLayoutInner>{children}</AppLayoutInner>
+      </EventsProvider>
     </LanguageProvider>
   );
 }
