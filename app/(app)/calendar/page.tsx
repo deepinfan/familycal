@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { translateStatus, useLanguage, weekdayLabels } from "../language-context";
 import { TaskCreateForm } from "../task-create-form";
 import { TaskEditForm } from "../task-edit-form";
+import { useEvents } from "../events-context";
 
 const EVENT_TYPES = ["学习", "玩耍", "家务", "购物", "其他"];
 
@@ -110,9 +111,7 @@ function displayTaskTitle(item: EventItem, language: "zh" | "en") {
 
 export default function CalendarPage() {
   const { language, t } = useLanguage();
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [currentRoleId, setCurrentRoleId] = useState("");
-  const [roles, setRoles] = useState<Array<{ id: string; name: string }>>([]);
+  const { events, roles, currentRoleId, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
   const [view, setView] = useState<"week" | "month">("week");
   const [anchor, setAnchor] = useState(new Date());
   const [activeDate, setActiveDate] = useState<string>(toDateKey(new Date()));
@@ -148,20 +147,6 @@ export default function CalendarPage() {
     { value: "yearly", label: t("repeatYearly") }
   ] as const;
 
-  async function loadEvents() {
-    fetch("/api/events")
-      .then((res) => res.json())
-      .then((json: EventsResponse) => {
-        setEvents(json.events ?? []);
-        setCurrentRoleId(json.currentRoleId ?? "");
-        setRoles(json.roles ?? []);
-      });
-  }
-
-  useEffect(() => {
-    void loadEvents();
-  }, []);
-
   async function updateStatus(eventId: string, nextStatus: "pending" | "done") {
     const target = events.find((item) => item.id === eventId);
     if (!target?.assignees.some((assignee) => assignee.id === currentRoleId)) {
@@ -183,9 +168,7 @@ export default function CalendarPage() {
       return;
     }
 
-    setEvents((prev) =>
-      prev.map((item) => (item.id === eventId ? { ...item, status: nextStatus } : item))
-    );
+    modifyEvent(eventId, { status: nextStatus });
     setCompletingTaskId("");
   }
 
@@ -261,9 +244,7 @@ export default function CalendarPage() {
       isSaving: true
     };
 
-    setEvents(prev => [...prev, tempEvent].sort((a, b) =>
-      new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
-    ));
+    addEvent(tempEvent);
 
     setCreatingTask(true);
     const res = await fetch("/api/events", {
@@ -284,13 +265,13 @@ export default function CalendarPage() {
     setCreatingTask(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
-      setEvents(prev => prev.filter(e => e.id !== tempId));
+      removeEvent(tempId);
       setWeekNotice(json.error ?? (language === "zh" ? "创建任务失败" : "Failed to create task"));
       return;
     }
 
     const json = await res.json();
-    setEvents(prev => prev.map(e => e.id === tempId ? json.event : e));
+    modifyEvent(tempId, json.event);
     setCreatingDateKey("");
   }
 
@@ -334,7 +315,6 @@ export default function CalendarPage() {
     }
 
     setEditingEventId("");
-    await loadEvents();
   }
 
   async function deleteEvent(item: EventItem) {
@@ -347,7 +327,7 @@ export default function CalendarPage() {
       return;
     }
     setEditingEventId("");
-    await loadEvents();
+    removeEvent(item.id);
     setDeletingTaskId("");
   }
 
