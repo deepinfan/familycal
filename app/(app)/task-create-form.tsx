@@ -23,6 +23,7 @@ type Props = {
   repeatUntil: string;
   assigneeRoleIds: string[];
   plain?: boolean;
+  creating?: boolean;
   cancelLabel: string;
   submitLabel: string;
   setTitleZh: (value: string) => void;
@@ -48,6 +49,7 @@ export function TaskCreateForm({
   repeatUntil,
   assigneeRoleIds,
   plain,
+  creating = false,
   cancelLabel,
   submitLabel,
   setTitleZh,
@@ -168,11 +170,11 @@ export function TaskCreateForm({
       </div>
 
       <div className="btn-row">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={creating}>
           {cancelLabel}
         </button>
-        <button type="button" className="btn btn-primary" onClick={onSubmit}>
-          {submitLabel}
+        <button type="button" className="btn btn-primary" onClick={onSubmit} disabled={creating}>
+          {creating ? (t("creatingTask") || "创建中...") : submitLabel}
         </button>
       </div>
     </div>

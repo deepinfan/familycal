@@ -151,6 +151,7 @@ export default function TasksPage() {
   const [completingTaskId, setCompletingTaskId] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [creatingTask, setCreatingTask] = useState(false);
 
   async function loadEvents() {
     setLoading(true);
@@ -223,6 +224,7 @@ export default function TasksPage() {
       return;
     }
 
+    setCreatingTask(true);
     const res = await fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -239,6 +241,7 @@ export default function TasksPage() {
       })
     });
 
+    setCreatingTask(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setError(json.error ?? "创建任务失败");
@@ -553,6 +556,7 @@ export default function TasksPage() {
               repeatUntil={repeatUntil}
               assigneeRoleIds={assigneeRoleIds}
               plain
+              creating={creatingTask}
               cancelLabel={t("autoParseTask")}
               submitLabel={t("createTaskButton")}
               setTitleZh={setTitleZh}
@@ -591,6 +595,7 @@ export default function TasksPage() {
                   repeatCycle={task.repeatCycle}
                   repeatUntil={task.repeatUntil}
                   assigneeRoleIds={task.assigneeRoleIds}
+                  creating={creatingTask}
                   cancelLabel={index === 0 ? t("manualInputTask") : t("delete")}
                   submitLabel={t("confirmTask")}
                   setTitleZh={(val) => {
@@ -639,6 +644,7 @@ export default function TasksPage() {
                       return;
                     }
 
+                    setCreatingTask(true);
                     const res = await fetch("/api/events", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
@@ -655,6 +661,7 @@ export default function TasksPage() {
                       })
                     });
 
+                    setCreatingTask(false);
                     if (!res.ok) {
                       const json = await res.json().catch(() => ({}));
                       setError(json.error ?? "创建任务失败");

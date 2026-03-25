@@ -137,6 +137,7 @@ export default function CalendarPage() {
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [completingTaskId, setCompletingTaskId] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState("");
+  const [creatingTask, setCreatingTask] = useState(false);
 
   const repeatOptions = [
     { value: "none", label: t("repeatNone") },
@@ -241,6 +242,7 @@ export default function CalendarPage() {
       return;
     }
 
+    setCreatingTask(true);
     const res = await fetch("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -256,6 +258,7 @@ export default function CalendarPage() {
       })
     });
 
+    setCreatingTask(false);
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
       setWeekNotice(json.error ?? (language === "zh" ? "创建任务失败" : "Failed to create task"));
@@ -422,6 +425,7 @@ export default function CalendarPage() {
       repeatUntil={createRepeatUntil}
       assigneeRoleIds={createAssigneeRoleIds}
       plain
+      creating={creatingTask}
       cancelLabel={language === "zh" ? "关闭" : "Close"}
       submitLabel={language === "zh" ? "创建任务" : "Create Task"}
       setTitleZh={setCreateTitleZh}
