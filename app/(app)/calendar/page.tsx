@@ -244,7 +244,8 @@ export default function CalendarPage() {
     }
 
     const tempId = `temp-${Date.now()}`;
-    const currentRole = roles.find(r => r.id === currentRoleId) || { id: currentRoleId, name: "", nameEn: "" };
+    const foundRole = roles.find(r => r.id === currentRoleId);
+    const currentRole = foundRole ? { ...foundRole, nameEn: "" } : { id: currentRoleId, name: "", nameEn: "" };
     const tempEvent: EventItem = {
       id: tempId,
       titleZh: createTitleZh,
