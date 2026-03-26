@@ -785,7 +785,7 @@ export default function DocumentsPage() {
                     </div>
                   ) : (
                     <>
-                      {loadingDocIds.has(doc.id) && doc.content === undefined ? (
+                      {loadingDocIds.has(doc.id) ? (
                         <div style={{
                           padding: "2rem",
                           textAlign: "center",
