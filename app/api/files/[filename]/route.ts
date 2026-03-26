@@ -25,6 +25,12 @@ export async function GET(
         include: {
           visibleTo: true
         }
+      },
+      event: {
+        include: {
+          assignees: { select: { roleId: true } },
+          issuedBy: { select: { id: true } }
+        }
       }
     }
   });
@@ -33,9 +39,17 @@ export async function GET(
     return NextResponse.json({ error: "文件不存在" }, { status: 404 });
   }
 
-  const hasAccess =
-    attachment.document.creatorId === auth.roleId ||
-    attachment.document.visibleTo.some((v) => v.roleId === auth.roleId);
+  let hasAccess = false;
+
+  if (attachment.document) {
+    hasAccess =
+      attachment.document.creatorId === auth.roleId ||
+      attachment.document.visibleTo.some((v) => v.roleId === auth.roleId);
+  } else if (attachment.event) {
+    const isAssignee = attachment.event.assignees.some((a) => a.roleId === auth.roleId);
+    const isIssuer = attachment.event.issuedBy.id === auth.roleId;
+    hasAccess = isAssignee || isIssuer;
+  }
 
   if (!hasAccess) {
     return NextResponse.json({ error: "无权访问" }, { status: 403 });
