@@ -623,8 +623,11 @@ export default function DocumentsPage() {
                 multiple
                 onChange={handleFileUpload}
                 disabled={uploading}
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
               />
+              <div className="inline-note" style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>
+                {t("supportedFileTypes")}
+              </div>
               {uploading ? <p className="inline-note">{t("uploading")}</p> : null}
               {uploadedFiles.length > 0 ? (
                 <div style={{ marginTop: "0.5rem" }}>
@@ -734,8 +737,11 @@ export default function DocumentsPage() {
                           multiple
                           onChange={handleEditFileUpload}
                           disabled={uploading}
-                          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
                         />
+                        <div className="inline-note" style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>
+                          {t("supportedFileTypes")}
+                        </div>
                         {uploading ? <p className="inline-note">{t("uploading")}</p> : null}
                         {editingDraft.attachments.length > 0 || editingDraft.newAttachments.length > 0 ? (
                           <div style={{ marginTop: "0.5rem" }}>
