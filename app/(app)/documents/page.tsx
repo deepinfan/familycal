@@ -172,6 +172,19 @@ export default function DocumentsPage() {
     async function loadExpandedContents() {
       if (!data) return;
 
+      // Clear loading state for docs that already have content
+      const docsWithContent = expandedDocIds.filter(docId => {
+        const doc = data.documents.find(d => d.id === docId);
+        return doc && doc.content !== undefined;
+      });
+      if (docsWithContent.length > 0) {
+        setLoadingDocIds(prev => {
+          const next = new Set(prev);
+          docsWithContent.forEach(id => next.delete(id));
+          return next;
+        });
+      }
+
       const docsNeedingData = expandedDocIds.map(docId => {
         const doc = data.documents.find(d => d.id === docId);
         return doc ? { docId, needsContent: doc.content === undefined, needsAttachments: doc.attachments.length === 0 } : null;
