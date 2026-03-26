@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 type Role = {
   id: string;
   name: string;
@@ -33,7 +35,12 @@ type Props = {
   setRepeatUntil: (value: string) => void;
   onToggleAssignee: (roleId: string) => void;
   onCancel: () => void;
-  onSubmit: () => void;
+  onSubmit: (uploadedFiles: Array<{
+    filename: string;
+    filepath: string;
+    mimetype: string;
+    size: number;
+  }>) => void;
   onEnableRepeat: () => void;
   onDisableRepeat: () => void;
 };
@@ -64,6 +71,38 @@ export function TaskCreateForm({
   onDisableRepeat
 }: Props) {
   const showRepeat = repeatCycle !== "none";
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{
+    filename: string;
+    filepath: string;
+    mimetype: string;
+    size: number;
+  }>>([]);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData
+        });
+        if (!res.ok) throw new Error(`上传 ${file.name} 失败`);
+        return res.json();
+      });
+      const results = await Promise.all(uploadPromises);
+      setUploadedFiles((prev) => [...prev, ...results]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div className={`inline-form${plain ? " inline-form--plain" : ""}`}>
@@ -169,11 +208,44 @@ export function TaskCreateForm({
         </div>
       </div>
 
+      <div>
+        <label className="eyebrow" style={{ marginBottom: 8 }}>
+          附件
+        </label>
+        <input
+          type="file"
+          multiple
+          onChange={handleFileUpload}
+          disabled={uploading}
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+        />
+        {uploading ? <p className="inline-note">上传中...</p> : null}
+        {uploadedFiles.length > 0 ? (
+          <div style={{ marginTop: "0.5rem" }}>
+            {uploadedFiles.map((file, index) => (
+              <div key={index} style={{ fontSize: "0.9rem", color: "var(--muted)", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
+                <span>📎 {file.filename} ({(file.size / 1024).toFixed(1)} KB)</span>
+                <button
+                  type="button"
+                  onClick={() => setUploadedFiles((prev) => prev.filter((_, i) => i !== index))}
+                  style={{ color: "var(--danger)", cursor: "pointer", background: "none", border: "none", padding: 0 }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
       <div className="btn-row">
         <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={creating}>
           {cancelLabel}
         </button>
-        <button type="button" className="btn btn-primary" onClick={onSubmit} disabled={creating}>
+        <button type="button" className="btn btn-primary" onClick={() => {
+          onSubmit(uploadedFiles);
+          setUploadedFiles([]);
+        }} disabled={creating}>
           {creating ? (t("creatingTask") || "创建中...") : submitLabel}
         </button>
       </div>
