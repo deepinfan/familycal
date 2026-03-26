@@ -237,7 +237,7 @@ export default function DocumentsPage() {
             updated.documents = updated.documents.map(d =>
               d.id === result.docId ? {
                 ...d,
-                ...(result.content && { content: result.content }),
+                ...(result.content !== null && result.content !== undefined && { content: result.content }),
                 ...(result.attachments && { attachments: result.attachments })
               } : d
             );
