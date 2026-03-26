@@ -560,7 +560,7 @@ export default function TasksPage() {
 
         {isSelected && loadingAttachments.has(item.id) ? (
           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)", color: "var(--muted)", textAlign: "center" }}>
-            正在加载附件...
+            {t("loadingAttachments")}
           </div>
         ) : null}
 

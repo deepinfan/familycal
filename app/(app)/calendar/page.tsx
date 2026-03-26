@@ -642,7 +642,7 @@ export default function CalendarPage() {
                           </div>
                           {isSelected && loadingAttachments.has(item.id) ? (
                             <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)", color: "var(--muted)", textAlign: "center" }}>
-                              正在加载附件...
+                              {t("loadingAttachments")}
                             </div>
                           ) : null}
                           {isSelected && item.attachments && item.attachments.length > 0 ? (
@@ -838,7 +838,7 @@ export default function CalendarPage() {
                         </div>
                         {isSelected && loadingAttachments.has(item.id) ? (
                           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)", color: "var(--muted)", textAlign: "center" }}>
-                            正在加载附件...
+                            {t("loadingAttachments")}
                           </div>
                         ) : null}
                         {isSelected && item.attachments && item.attachments.length > 0 ? (
