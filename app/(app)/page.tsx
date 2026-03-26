@@ -558,6 +558,12 @@ export default function TasksPage() {
           </div>
         </div>
 
+        {isSelected && loadingAttachments.has(item.id) ? (
+          <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)", color: "var(--muted)", textAlign: "center" }}>
+            正在加载附件...
+          </div>
+        ) : null}
+
         {isSelected && item.attachments && item.attachments.length > 0 ? (
           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)" }}>
             <div className="eyebrow" style={{ marginBottom: "0.5rem" }}>附件</div>
