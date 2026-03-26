@@ -277,6 +277,23 @@ export default function DocumentsPage() {
     });
   }
 
+  function openLightbox(docId: string, imageIndex: number) {
+    const doc = data?.documents.find(d => d.id === docId);
+    if (!doc) return;
+
+    const images = doc.attachments
+      .filter(f => f.mimetype.startsWith("image/"))
+      .map(f => ({
+        src: `/api/files/${f.filepath.split('/').pop()}`,
+        thumbnail: f.thumbnail,
+        alt: f.filename
+      }));
+
+    setLightboxImages(images);
+    setLightboxIndex(imageIndex);
+    setLightboxOpen(true);
+  }
+
   async function toggleDoc(docId: string) {
     const isExpanding = !expandedDocIds.includes(docId);
 
@@ -821,9 +838,14 @@ export default function DocumentsPage() {
                                       </div>
                                     )}
                                     <img
-                                      src={protectedUrl}
+                                      src={file.thumbnail || protectedUrl}
                                       alt={file.filename}
-                                      onClick={() => setViewingImage(protectedUrl)}
+                                      onClick={() => {
+                                        const imageIndex = doc.attachments
+                                          .filter(f => f.mimetype.startsWith("image/"))
+                                          .findIndex(f => f.id === file.id);
+                                        openLightbox(doc.id, imageIndex);
+                                      }}
                                       onLoadStart={() => {
                                         setLoadingImages(prev => new Set(prev).add(file.id));
                                       }}
