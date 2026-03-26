@@ -243,7 +243,7 @@ export default function TasksPage() {
   const otherUnfinished = useMemo(() => otherTasks.filter((item) => item.status !== "done"), [otherTasks]);
   const otherDone = useMemo(() => otherTasks.filter((item) => item.status === "done"), [otherTasks]);
 
-  async function createEvent() {
+  async function createEvent(attachments = []) {
     const effectiveDatetime = createMode === "manual" || confirmingParsedTask
       ? combineDateAndTime(manualDate, manualTime)
       : datetime;
@@ -290,7 +290,8 @@ export default function TasksPage() {
         repeatUntil: repeatCycle === "none" ? null : dateInputToEndOfDayIso(repeatUntil),
         issuedByRoleId,
         assigneeAll: false,
-        assigneeRoleIds
+        assigneeRoleIds,
+        attachments
       })
     });
 
@@ -686,7 +687,7 @@ export default function TasksPage() {
                 setCreateMode("nl");
                 setConfirmingParsedTask(false);
               }}
-              onSubmit={() => createEvent()}
+              onSubmit={(files) => createEvent(files)}
               onEnableRepeat={() => {
                 setRepeatCycle("daily");
                 setRepeatUntil((prev) => prev || getTodayDateInput());
@@ -746,7 +747,7 @@ export default function TasksPage() {
                       setParsedTasks((prev) => prev.filter((_, i) => i !== index));
                     }
                   }}
-                  onSubmit={async () => {
+                  onSubmit={async (files) => {
                     const effectiveDatetime = combineDateAndTime(task.manualDate, task.manualTime);
                     if (!effectiveDatetime || Number.isNaN(new Date(effectiveDatetime).getTime())) {
                       setError(`${t("datetime")}不能为空`);
@@ -793,7 +794,8 @@ export default function TasksPage() {
                         repeatUntil: task.repeatCycle === "none" ? null : dateInputToEndOfDayIso(task.repeatUntil),
                         issuedByRoleId,
                         assigneeAll: false,
-                        assigneeRoleIds: task.assigneeRoleIds
+                        assigneeRoleIds: task.assigneeRoleIds,
+                        attachments: files
                       })
                     });
 
