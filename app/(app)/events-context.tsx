@@ -29,7 +29,9 @@ type EventsContextType = {
   currentRoleId: string;
   loading: boolean;
   error: string;
+  hasMore: boolean;
   loadEvents: () => Promise<void>;
+  loadMore: () => Promise<void>;
   createEvent: (event: EventItem) => void;
   updateEvent: (id: string, updates: Partial<EventItem>) => void;
   deleteEvent: (id: string) => void;
@@ -43,20 +45,44 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   const [currentRoleId, setCurrentRoleId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   async function loadEvents() {
     setLoading(true);
     setError("");
+    setPage(1);
     try {
-      const res = await fetch("/api/events", { cache: "no-store" });
+      const res = await fetch("/api/events?page=1&limit=50", { cache: "no-store" });
       if (!res.ok) throw new Error("加载失败");
       const json = await res.json();
       setEvents(json.events ?? []);
       setRoles(json.roles ?? []);
       setCurrentRoleId(json.currentRoleId ?? "");
+      setHasMore(json.pagination?.hasMore ?? false);
     } catch (err) {
       console.error('Failed to load events:', err);
       setError("加载任务失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadMore() {
+    if (!hasMore || loading) return;
+
+    setLoading(true);
+    try {
+      const nextPage = page + 1;
+      const res = await fetch(`/api/events?page=${nextPage}&limit=50`, { cache: "no-store" });
+      if (!res.ok) throw new Error("加载失败");
+      const json = await res.json();
+      setEvents(prev => [...prev, ...(json.events ?? [])]);
+      setPage(nextPage);
+      setHasMore(json.pagination?.hasMore ?? false);
+    } catch (err) {
+      console.error('Failed to load more events:', err);
+      setError("加载更多失败");
     } finally {
       setLoading(false);
     }
@@ -82,8 +108,8 @@ export function EventsProvider({ children }: { children: ReactNode }) {
 
   return (
     <EventsContext.Provider value={{
-      events, roles, currentRoleId, loading, error,
-      loadEvents, createEvent, updateEvent, deleteEvent
+      events, roles, currentRoleId, loading, error, hasMore,
+      loadEvents, loadMore, createEvent, updateEvent, deleteEvent
     }}>
       {children}
     </EventsContext.Provider>

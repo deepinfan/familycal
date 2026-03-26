@@ -46,19 +46,49 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "管理员仅可访问后台" }, { status: 403 });
   }
 
-  const [roles, events] = await Promise.all([
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const skip = (page - 1) * limit;
+
+  const now = new Date();
+  const startDate = new Date(now);
+  startDate.setMonth(startDate.getMonth() - 1);
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(now);
+  endDate.setMonth(endDate.getMonth() + 2);
+  endDate.setHours(23, 59, 59, 999);
+
+  const [roles, total, events] = await Promise.all([
     prisma.role.findMany({
       where: { isAdmin: false },
       select: { id: true, name: true },
       orderBy: { createdAt: "asc" }
     }),
+    prisma.event.count({
+      where: {
+        datetime: {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+    }),
     prisma.event.findMany({
+      where: {
+        datetime: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
       include: {
         creator: { select: { id: true, name: true, nameEn: true } },
         issuedBy: { select: { id: true, name: true, nameEn: true } },
         assignees: { include: { role: { select: { id: true, name: true, nameEn: true } } } }
       },
-      orderBy: { datetime: "asc" }
+      orderBy: { datetime: "asc" },
+      skip,
+      take: limit
     })
   ]);
 
@@ -78,7 +108,17 @@ export async function GET(request: NextRequest) {
     updatedAt: event.updatedAt
   }));
 
-  return NextResponse.json({ currentRoleId: auth.roleId, roles, events: result });
+  return NextResponse.json({
+    currentRoleId: auth.roleId,
+    roles,
+    events: result,
+    pagination: {
+      page,
+      limit,
+      total,
+      hasMore: skip + events.length < total
+    }
+  });
 }
 
 export async function POST(request: NextRequest) {
