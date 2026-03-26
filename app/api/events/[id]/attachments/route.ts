@@ -4,15 +4,16 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const auth = await getAuthFromRequest(request);
   if (!auth) {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
+  const { id } = await context.params;
   const event = await prisma.event.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       assignees: { select: { roleId: true } },
       issuedBy: { select: { id: true } }
@@ -31,7 +32,7 @@ export async function GET(
   }
 
   const attachments = await prisma.attachment.findMany({
-    where: { eventId: params.id },
+    where: { eventId: id },
     orderBy: { createdAt: "asc" }
   });
 
