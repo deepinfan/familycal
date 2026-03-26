@@ -76,6 +76,7 @@ export default function DocumentsPage() {
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [loadingDocIds, setLoadingDocIds] = useState<Set<string>>(new Set());
 
   function clearDocumentsCache() {
     sessionStorage.removeItem('documents-cache');
@@ -190,6 +191,11 @@ export default function DocumentsPage() {
 
       if (docsNeedingData.length === 0) return;
 
+      const docsNeedingContent = docsNeedingData.filter(d => d?.needsContent).map(d => d!.docId);
+      if (docsNeedingContent.length > 0) {
+        setLoadingDocIds(prev => new Set([...prev, ...docsNeedingContent]));
+      }
+
       const promises = docsNeedingData.map(async (item) => {
         if (!item) return null;
         const [contentRes, attachRes] = await Promise.all([
@@ -225,6 +231,14 @@ export default function DocumentsPage() {
         });
         return updated;
       });
+
+      if (docsNeedingContent.length > 0) {
+        setLoadingDocIds(prev => {
+          const next = new Set(prev);
+          docsNeedingContent.forEach(id => next.delete(id));
+          return next;
+        });
+      }
     }
 
     loadExpandedContents();
@@ -751,9 +765,20 @@ export default function DocumentsPage() {
                     </div>
                   ) : (
                     <>
-                      <article className="markdown docs-entry__markdown" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
-                        <ReactMarkdown>{doc.content}</ReactMarkdown>
-                      </article>
+                      {loadingDocIds.has(doc.id) ? (
+                        <div style={{
+                          padding: "2rem",
+                          textAlign: "center",
+                          borderTop: "1px solid var(--line)",
+                          color: "var(--muted)"
+                        }}>
+                          正在加载数据...
+                        </div>
+                      ) : (
+                        <article className="markdown docs-entry__markdown" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+                          <ReactMarkdown>{doc.content}</ReactMarkdown>
+                        </article>
+                      )}
 
                       {doc.attachments.length > 0 ? (
                         <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)" }}>
