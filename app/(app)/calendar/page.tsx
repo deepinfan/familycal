@@ -90,7 +90,7 @@ function displayTaskTitle(item: EventItem, language: "zh" | "en") {
 
 export default function CalendarPage() {
   const { language, t } = useLanguage();
-  const { events, roles, currentRoleId, hasMore, loadMore, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
+  const { events, roles, currentRoleId, loading, hasMore, loadMore, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
   const [view, setView] = useState<"week" | "month">("week");
   const [anchor, setAnchor] = useState(new Date());
   const [activeDate, setActiveDate] = useState<string>(toDateKey(new Date()));
@@ -671,7 +671,7 @@ export default function CalendarPage() {
             </div>
             <span className="pill">{monthEvents.length} {t("items")}</span>
           </div>
-          {monthSections.length === 0 ? <div className="empty-state">{t("noTasksThatDay")}</div> : null}
+          {!loading && monthSections.length === 0 ? <div className="empty-state">{t("noTasksThatDay")}</div> : null}
           <div className="month-sections">
             {monthSections.map(({ key, day, events: dayEvents }) => (
               <section key={key} className="month-day-section" data-event-date={key}>

@@ -760,7 +760,7 @@ export default function TasksPage() {
           </div>
           {mineExpanded ? (
             <>
-              {(mineFilter === "unfinished" ? mineUnfinished : mineDone).length === 0 ? (
+              {!loading && (mineFilter === "unfinished" ? mineUnfinished : mineDone).length === 0 ? (
                 <div className="empty-state">{t("noMineTasks")}</div>
               ) : null}
               <ul className="task-list">{(mineFilter === "unfinished" ? mineUnfinished : mineDone).map((item) => renderCard(item, false))}</ul>
@@ -802,7 +802,7 @@ export default function TasksPage() {
           </div>
           {arrangedExpanded ? (
             <>
-              {(arrangedFilter === "unfinished" ? otherUnfinished : otherDone).length === 0 ? (
+              {!loading && (arrangedFilter === "unfinished" ? otherUnfinished : otherDone).length === 0 ? (
                 <div className="empty-state">{t("noOtherTasks")}</div>
               ) : null}
               <ul className="task-list">{(arrangedFilter === "unfinished" ? otherUnfinished : otherDone).map((item) => renderCard(item, true))}</ul>
