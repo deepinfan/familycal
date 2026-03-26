@@ -15,7 +15,14 @@ const createEventSchema = z.object({
   repeatUntil: z.string().datetime().nullable().optional().default(null),
   issuedByRoleId: z.string().min(1).optional(),
   assigneeRoleIds: z.array(z.string()).optional().default([]),
-  assigneeAll: z.boolean().optional().default(false)
+  assigneeAll: z.boolean().optional().default(false),
+  attachments: z.array(z.object({
+    filename: z.string(),
+    filepath: z.string(),
+    thumbnail: z.string().nullable().optional(),
+    mimetype: z.string(),
+    size: z.number()
+  })).optional().default([])
 }).superRefine((data, ctx) => {
   if (data.repeatCycle !== "none" && !data.repeatUntil) {
     ctx.addIssue({
@@ -179,6 +186,11 @@ export async function POST(request: NextRequest) {
           assignees: {
             createMany: {
               data: dedupRoleIds.map((roleId) => ({ roleId }))
+            }
+          },
+          attachments: {
+            createMany: {
+              data: data.attachments
             }
           }
         },
