@@ -140,7 +140,7 @@ export default function DocumentsPage() {
           const oldDoc = prev.documents.find(d => d.id === newDoc.id);
           return {
             ...newDoc,
-            content: oldDoc?.content || newDoc.content,
+            content: oldDoc?.content !== undefined ? oldDoc.content : newDoc.content,
             attachments: oldDoc?.attachments.length ? oldDoc.attachments : newDoc.attachments
           };
         })
