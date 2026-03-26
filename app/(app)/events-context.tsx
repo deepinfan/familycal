@@ -2,6 +2,15 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+type Attachment = {
+  id: string;
+  filename: string;
+  filepath: string;
+  thumbnail?: string;
+  mimetype: string;
+  size: number;
+};
+
 type Role = {
   id: string;
   name: string;
@@ -20,6 +29,7 @@ type EventItem = {
   creator: Role;
   issuedBy: Role;
   assignees: Role[];
+  attachments?: Attachment[];
   isSaving?: boolean;
 };
 
@@ -124,4 +134,4 @@ export function useEvents() {
   return context;
 }
 
-export type { EventItem, Role };
+export type { EventItem, Role, Attachment };
