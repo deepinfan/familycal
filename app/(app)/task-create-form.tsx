@@ -97,8 +97,10 @@ export function TaskCreateForm({
       });
       const results = await Promise.all(uploadPromises);
       setUploadedFiles((prev) => [...prev, ...results]);
+      e.target.value = '';
     } catch (err) {
       console.error(err);
+      e.target.value = '';
     } finally {
       setUploading(false);
     }
