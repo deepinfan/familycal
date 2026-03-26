@@ -94,6 +94,16 @@ export default function DocumentsPage() {
     sessionStorage.removeItem('documents-cache');
   }
 
+  function updateDataAndCache(updater: (prev: DocumentsResponse | null) => DocumentsResponse | null) {
+    setData(prev => {
+      const updated = updater(prev);
+      if (updated) {
+        sessionStorage.setItem('documents-cache', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }
+
   async function loadDocs() {
     // Try to show cached data immediately
     const cached = sessionStorage.getItem('documents-cache');
@@ -227,7 +237,7 @@ export default function DocumentsPage() {
 
       const results = await Promise.all(promises);
 
-      setData(prev => {
+      updateDataAndCache(prev => {
         if (!prev) return null;
         let updated = { ...prev, documents: [...prev.documents] };
         results.forEach(result => {
@@ -316,7 +326,7 @@ export default function DocumentsPage() {
           });
           if (contentRes.ok) {
             const contentJson = await contentRes.json();
-            setData(prev => prev ? {
+            updateDataAndCache(prev => prev ? {
               ...prev,
               documents: prev.documents.map(d =>
                 d.id === docId ? { ...d, content: contentJson.content } : d
@@ -331,7 +341,7 @@ export default function DocumentsPage() {
             fetch(`/api/documents/${docId}/attachments`)
               .then(res => res.json())
               .then(attachJson => {
-                setData(prev => prev ? {
+                updateDataAndCache(prev => prev ? {
                   ...prev,
                   documents: prev.documents.map(d =>
                     d.id === docId ? { ...d, attachments: attachJson.attachments } : d
