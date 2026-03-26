@@ -15,7 +15,7 @@ type RepeatOption = {
 };
 
 type Props = {
-  t: (key: any) => string;
+  t: (key: any, vars?: Record<string, string | number>) => string;
   roles: Role[];
   repeatOptions: readonly RepeatOption[];
   titleZh: string;

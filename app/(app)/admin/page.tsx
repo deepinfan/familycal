@@ -65,12 +65,12 @@ export default function AdminPage() {
     const configJson = await configRes.json().catch(() => ({}));
 
     if (!rolesRes.ok) {
-      setError(rolesJson.error ?? "加载角色失败");
+      setError(rolesJson.error ?? t("loadRolesFailed"));
       return;
     }
 
     if (!configRes.ok) {
-      setError(configJson.error ?? "加载系统配置失败");
+      setError(configJson.error ?? t("loadConfigFailed"));
       return;
     }
 
@@ -102,7 +102,7 @@ export default function AdminPage() {
         if (translated) setAppTitleZh(translated);
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "自动翻译失败");
+      setError(error instanceof Error ? error.message : t("autoTranslateFailed"));
     } finally {
       setTranslatingCreate("");
     }
@@ -119,7 +119,7 @@ export default function AdminPage() {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(json.error ?? "自动翻译失败");
+      throw new Error(json.error ?? t("autoTranslateFailed"));
     }
 
     return String(json.text ?? "").trim();
@@ -139,7 +139,7 @@ export default function AdminPage() {
         if (translated) setName(translated);
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "自动翻译失败");
+      setError(error instanceof Error ? error.message : t("autoTranslateFailed"));
     } finally {
       setTranslatingCreate("");
     }
@@ -165,7 +165,7 @@ export default function AdminPage() {
         }
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "自动翻译失败");
+      setError(error instanceof Error ? error.message : t("autoTranslateFailed"));
     } finally {
       setTranslatingEdit("");
     }
@@ -183,7 +183,7 @@ export default function AdminPage() {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(json.error ?? "创建失败");
+      setError(json.error ?? t("createFailed"));
       return;
     }
 
@@ -217,7 +217,7 @@ export default function AdminPage() {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(json.error ?? "更新失败");
+      setError(json.error ?? t("updateFailed"));
       return;
     }
 
@@ -237,7 +237,7 @@ export default function AdminPage() {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(json.error ?? "改密失败");
+      setError(json.error ?? t("changePasswordFailed"));
       return;
     }
 
@@ -252,7 +252,7 @@ export default function AdminPage() {
     const res = await fetch(`/api/admin/roles/${roleId}`, { method: "DELETE" });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(json.error ?? "删除失败");
+      setError(json.error ?? t("deleteFailed"));
       return;
     }
 
@@ -265,7 +265,7 @@ export default function AdminPage() {
     setLlmTestResult("");
 
     if (!llmModel) {
-      setError("请先测试配置并选择模型");
+      setError(t("testModelFirst"));
       return;
     }
 
@@ -286,14 +286,14 @@ export default function AdminPage() {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(json.error ?? "保存配置失败");
+      setError(json.error ?? t("saveConfigFailed"));
       return;
     }
 
     setConfig(json);
     setLlmApiKey("");
     setAvailableModels([]);
-    setLlmTestResult("✅ 配置已保存");
+    setLlmTestResult(t("configSaved"));
     window.dispatchEvent(
       new CustomEvent("homecal-config-updated", {
         detail: {
@@ -323,11 +323,11 @@ export default function AdminPage() {
     setTestingLlm(false);
 
     if (!res.ok) {
-      setLlmTestResult(`❌ ${json.error ?? "测试失败"}`);
+      setLlmTestResult(`❌ ${json.error ?? t("testFailed")}`);
       return;
     }
 
-    setLlmTestResult(`✅ ${json.message ?? "测试成功"}`);
+    setLlmTestResult(`✅ ${json.message ?? t("testSuccess")}`);
     if (json.models && Array.isArray(json.models)) {
       setAvailableModels(json.models);
     }
@@ -348,7 +348,7 @@ export default function AdminPage() {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(json.error ?? "保存配置失败");
+      setError(json.error ?? t("saveConfigFailed"));
       return;
     }
 
@@ -410,11 +410,11 @@ export default function AdminPage() {
               </label>
             </div>
 
-            {translatingCreate ? <div className="inline-note">自动翻译中...</div> : null}
+            {translatingCreate ? <div className="inline-note">{t("autoTranslating")}</div> : null}
 
             <div className="btn-row">
               <button type="submit" className="btn btn-accent">
-                保存
+                {t("saveButton")}
               </button>
             </div>
           </form>
@@ -466,7 +466,7 @@ export default function AdminPage() {
 
             {availableModels.length > 0 && (
               <div>
-                <div className="eyebrow" style={{ marginBottom: 8 }}>可用模型（点击选择）</div>
+                <div className="eyebrow" style={{ marginBottom: 8 }}>{t("availableModels")}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                   {availableModels.map((model) => (
                     <button
@@ -496,7 +496,7 @@ export default function AdminPage() {
                 disabled={testingLlm}
                 className="btn btn-accent"
               >
-                {testingLlm ? "测试中..." : (availableModels.length > 0 && llmModel ? "保存" : "测试")}
+                {testingLlm ? t("testing") : (availableModels.length > 0 && llmModel ? t("saveButton") : t("testButton"))}
               </button>
             </div>
           </div>
@@ -513,7 +513,7 @@ export default function AdminPage() {
             <div className="grid-cards grid-cards--2">
               <input
                 required
-                placeholder="中文名"
+                placeholder={t("chineseName")}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -523,7 +523,7 @@ export default function AdminPage() {
               />
               <input
                 required
-                placeholder="English Name"
+                placeholder={t("englishName")}
                 value={nameEn}
                 onChange={(e) => {
                   setNameEn(e.target.value);
@@ -532,7 +532,7 @@ export default function AdminPage() {
                 onBlur={() => handleCreateNameBlur("en")}
               />
             </div>
-            {translatingCreate ? <div className="inline-note">自动翻译中...</div> : null}
+            {translatingCreate ? <div className="inline-note">{t("autoTranslating")}</div> : null}
             <input required type="password" placeholder={t("initialPasswordPlaceholder")} value={password} onChange={(e) => setPassword(e.target.value)} />
             <div className="btn-row">
               <button type="submit" className="btn btn-accent">
@@ -607,7 +607,7 @@ export default function AdminPage() {
                           setEditingDraft({ ...editingDraft, name: e.target.value });
                           setEditManualEdited(prev => new Set(prev).add("name"));
                         }}
-                        placeholder="中文名"
+                        placeholder={t("chineseName")}
                         onBlur={() => handleEditNameBlur("zh")}
                       />
                       <input
@@ -616,11 +616,11 @@ export default function AdminPage() {
                           setEditingDraft({ ...editingDraft, nameEn: e.target.value });
                           setEditManualEdited(prev => new Set(prev).add("nameEn"));
                         }}
-                        placeholder="English Name"
+                        placeholder={t("englishName")}
                         onBlur={() => handleEditNameBlur("en")}
                       />
                     </div>
-                    {translatingEdit ? <div className="inline-note">自动翻译中...</div> : null}
+                    {translatingEdit ? <div className="inline-note">{t("autoTranslating")}</div> : null}
                     <div className="btn-row">
                       <button type="button" className="btn btn-primary" onClick={() => saveRole(role.id)}>
                         {t("save")}

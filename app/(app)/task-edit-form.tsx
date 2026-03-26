@@ -131,11 +131,11 @@ export function TaskEditForm({
 
       <div className="btn-row">
         <button type="button" className="btn btn-primary btn-sm" onClick={onSave} disabled={saving}>
-          {saving ? (language === "zh" ? "保存中..." : "Saving...") : t("saveChanges")}
+          {saving ? t("saving") : t("saveChanges")}
         </button>
         {onDelete ? (
           <button type="button" className="btn btn-danger btn-sm" onClick={onDelete} disabled={deleting}>
-            {deleting ? (language === "zh" ? "删除中..." : "Deleting...") : t("delete")}
+            {deleting ? t("deleting") : t("delete")}
           </button>
         ) : null}
         <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
