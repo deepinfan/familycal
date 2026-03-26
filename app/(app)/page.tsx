@@ -468,11 +468,15 @@ export default function TasksPage() {
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {isAssignee ? (
               <button
-                onClick={(e) => { e.stopPropagation(); updateStatus(item.id, "done"); }}
+                onClick={(e) => { e.stopPropagation(); updateStatus(item.id, item.status === "done" ? "pending" : "done"); }}
                 className="btn btn-primary btn-sm"
                 disabled={completingTaskId === item.id}
               >
-                {completingTaskId === item.id ? (language === "zh" ? "完成中..." : "Completing...") : t("finish")}
+                {completingTaskId === item.id
+                  ? (language === "zh" ? "处理中..." : "Processing...")
+                  : (item.status === "done"
+                      ? (language === "zh" ? "取消完成" : "Undo")
+                      : t("finish"))}
               </button>
             ) : null}
             {isCreator ? (
