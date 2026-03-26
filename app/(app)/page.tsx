@@ -324,7 +324,7 @@ export default function TasksPage() {
     }
   }
 
-  async function updateStatus(eventId: string, status: "done" | "cancelled") {
+  async function updateStatus(eventId: string, status: "pending" | "done" | "cancelled") {
     setCompletingTaskId(eventId);
     const res = await fetch(`/api/events/${eventId}`, {
       method: "PATCH",
