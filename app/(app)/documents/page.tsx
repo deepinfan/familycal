@@ -174,7 +174,7 @@ export default function DocumentsPage() {
 
       const docsNeedingData = expandedDocIds.map(docId => {
         const doc = data.documents.find(d => d.id === docId);
-        return doc ? { docId, needsContent: !doc.content, needsAttachments: doc.attachments.length === 0 } : null;
+        return doc ? { docId, needsContent: doc.content === undefined, needsAttachments: doc.attachments.length === 0 } : null;
       }).filter(Boolean);
 
       if (docsNeedingData.length === 0) return;
@@ -284,7 +284,7 @@ export default function DocumentsPage() {
       const doc = data.documents.find(d => d.id === docId);
       if (doc) {
         // 1. 优先加载文档内容
-        if (!doc.content) {
+        if (doc.content === undefined) {
           const contentRes = await fetch(`/api/documents/${docId}/content`, {
             headers: {
               "Accept-Language": language === "zh" ? "zh-CN" : "en-US"
