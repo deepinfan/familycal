@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useLanguage } from "../language-context";
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Download from "yet-another-react-lightbox/plugins/download";
+import "yet-another-react-lightbox/styles.css";
 
 type Role = {
   id: string;
@@ -77,6 +81,13 @@ export default function DocumentsPage() {
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [loadingDocIds, setLoadingDocIds] = useState<Set<string>>(new Set());
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<Array<{
+    src: string;
+    thumbnail?: string;
+    alt: string;
+  }>>([]);
 
   function clearDocumentsCache() {
     sessionStorage.removeItem('documents-cache');
