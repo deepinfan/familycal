@@ -172,7 +172,7 @@ const messages = {
     chineseName: "中文名",
     englishName: "English Name",
     availableModels: "可用模型（点击选择）",
-    supportedFileTypes: "支持：图片、PDF、Word、Excel、文本文件"
+    supportedFileTypes: "支持：图片、PDF、Word、Excel、PowerPoint、文本文件"
   },
   en: {
     homecal: "HomeCal",
@@ -341,7 +341,7 @@ const messages = {
     chineseName: "Chinese Name",
     englishName: "English Name",
     availableModels: "Available Models (click to select)",
-    supportedFileTypes: "Supported: Images, PDF, Word, Excel, Text files"
+    supportedFileTypes: "Supported: Images, PDF, Word, Excel, PowerPoint, Text files"
   }
 } as const;
 

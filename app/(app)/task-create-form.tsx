@@ -219,7 +219,7 @@ export function TaskCreateForm({
           multiple
           onChange={handleFileUpload}
           disabled={uploading}
-          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
         />
         <div className="inline-note" style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>
           {t("supportedFileTypes")}
