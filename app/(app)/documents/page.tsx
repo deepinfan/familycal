@@ -110,8 +110,6 @@ export default function DocumentsPage() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        console.log('[loadDocs] Loading from cache, docs with content:',
-          parsed.documents.filter((d: DocumentItem) => d.content !== undefined).map((d: DocumentItem) => d.id));
         setData(parsed);
       } catch {}
     }
@@ -159,9 +157,7 @@ export default function DocumentsPage() {
     const saved = localStorage.getItem("expandedDocIds");
     if (saved) {
       try {
-        const ids = JSON.parse(saved);
-        console.log('[useEffect] Setting expandedDocIds from localStorage:', ids);
-        setExpandedDocIds(ids);
+        setExpandedDocIds(JSON.parse(saved));
       } catch {}
     }
   }, []);
@@ -176,21 +172,15 @@ export default function DocumentsPage() {
     async function loadExpandedContents() {
       if (!data) return;
 
-      console.log('[loadExpandedContents] Effect triggered, expandedDocIds:', expandedDocIds);
-      console.log('[loadExpandedContents] Current data docs with content:',
-        data.documents.filter(d => d.content !== undefined).map(d => d.id));
-
       // Clear loading state for docs that already have content
       const docsWithContent = expandedDocIds.filter(docId => {
         const doc = data.documents.find(d => d.id === docId);
         return doc && doc.content !== undefined;
       });
       if (docsWithContent.length > 0) {
-        console.log('[loadExpandedContents] Clearing loadingDocIds for docs with content:', docsWithContent);
         setLoadingDocIds(prev => {
           const next = new Set(prev);
           docsWithContent.forEach(id => next.delete(id));
-          console.log('[loadExpandedContents] loadingDocIds after clearing:', Array.from(next));
           return next;
         });
       }
@@ -200,13 +190,10 @@ export default function DocumentsPage() {
         return doc ? { docId, needsContent: doc.content === undefined, needsAttachments: doc.attachments.length === 0 } : null;
       }).filter(Boolean);
 
-      console.log('[loadExpandedContents] docsNeedingData:', docsNeedingData);
-
       if (docsNeedingData.length === 0) return;
 
       const docsNeedingContent = docsNeedingData.filter(d => d?.needsContent).map(d => d!.docId);
       if (docsNeedingContent.length > 0) {
-        console.log('[loadExpandedContents] Setting loadingDocIds for docs needing content:', docsNeedingContent);
         setLoadingDocIds(prev => new Set([...prev, ...docsNeedingContent]));
       }
 
@@ -247,11 +234,9 @@ export default function DocumentsPage() {
       });
 
       if (docsNeedingContent.length > 0) {
-        console.log('[loadExpandedContents] Clearing loadingDocIds after fetch for:', docsNeedingContent);
         setLoadingDocIds(prev => {
           const next = new Set(prev);
           docsNeedingContent.forEach(id => next.delete(id));
-          console.log('[loadExpandedContents] loadingDocIds after fetch clearing:', Array.from(next));
           return next;
         });
       }
