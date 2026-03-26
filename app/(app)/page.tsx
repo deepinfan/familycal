@@ -325,6 +325,7 @@ export default function TasksPage() {
   }
 
   async function updateStatus(eventId: string, status: "done" | "cancelled") {
+    console.log('[updateStatus] Called with:', { eventId, status });
     setCompletingTaskId(eventId);
     const res = await fetch(`/api/events/${eventId}`, {
       method: "PATCH",
@@ -332,14 +333,18 @@ export default function TasksPage() {
       body: JSON.stringify({ mode: "status", status })
     });
 
+    console.log('[updateStatus] Response status:', res.status);
+
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
+      console.log('[updateStatus] Error response:', json);
       setError(json.error ?? "更新状态失败");
       setCompletingTaskId("");
       return;
     }
 
     const json = await res.json();
+    console.log('[updateStatus] Success response:', json);
     modifyEvent(eventId, json.event);
     setCompletingTaskId("");
   }
