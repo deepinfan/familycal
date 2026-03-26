@@ -39,6 +39,7 @@ model Event {
   issuedById String
   issuedBy   Role            @relation("issuer", fields: [issuedById], references: [id])
   assignees  EventAssignee[]
+  attachments Attachment[]
   logs       EventLog[]
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
@@ -93,15 +94,17 @@ model DocumentVisibility {
 }
 
 model Attachment {
-  id         String   @id @default(cuid())
-  documentId String
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  eventId    String?
+  event      Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   filename   String
   filepath   String
   thumbnail  String?
   mimetype   String
   size       Int
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 }
 
 model PushSubscription {
