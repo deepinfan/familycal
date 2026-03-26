@@ -92,7 +92,7 @@ export function TaskCreateForm({
           method: "POST",
           body: formData
         });
-        if (!res.ok) throw new Error(`上传 ${file.name} 失败`);
+        if (!res.ok) throw new Error(t("uploadFailed", { filename: file.name }));
         return res.json();
       });
       const results = await Promise.all(uploadPromises);
@@ -210,7 +210,7 @@ export function TaskCreateForm({
 
       <div>
         <label className="eyebrow" style={{ marginBottom: 8 }}>
-          附件
+          {t("attachments")}
         </label>
         <input
           type="file"
@@ -219,7 +219,7 @@ export function TaskCreateForm({
           disabled={uploading}
           accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
         />
-        {uploading ? <p className="inline-note">上传中...</p> : null}
+        {uploading ? <p className="inline-note">{t("uploading")}</p> : null}
         {uploadedFiles.length > 0 ? (
           <div style={{ marginTop: "0.5rem" }}>
             {uploadedFiles.map((file, index) => (
@@ -246,7 +246,7 @@ export function TaskCreateForm({
           onSubmit(uploadedFiles);
           setUploadedFiles([]);
         }} disabled={creating}>
-          {creating ? (t("creatingTask") || "创建中...") : submitLabel}
+          {creating ? t("creatingTask") : submitLabel}
         </button>
       </div>
     </div>
