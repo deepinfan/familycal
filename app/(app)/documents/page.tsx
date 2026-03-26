@@ -625,7 +625,7 @@ export default function DocumentsPage() {
                 disabled={uploading}
                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
               />
-              {uploading ? <p className="inline-note">上传中...</p> : null}
+              {uploading ? <p className="inline-note">{t("uploading")}</p> : null}
               {uploadedFiles.length > 0 ? (
                 <div style={{ marginTop: "0.5rem" }}>
                   {uploadedFiles.map((file, index) => (
@@ -736,7 +736,7 @@ export default function DocumentsPage() {
                           disabled={uploading}
                           accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                         />
-                        {uploading ? <p className="inline-note">上传中...</p> : null}
+                        {uploading ? <p className="inline-note">{t("uploading")}</p> : null}
                         {editingDraft.attachments.length > 0 || editingDraft.newAttachments.length > 0 ? (
                           <div style={{ marginTop: "0.5rem" }}>
                             {editingDraft.attachments.map((file) => (
@@ -792,7 +792,7 @@ export default function DocumentsPage() {
                           borderTop: "1px solid var(--line)",
                           color: "var(--muted)"
                         }}>
-                          正在加载数据...
+                          {t("loadingData")}
                         </div>
                       ) : (
                         <article className="markdown docs-entry__markdown" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
@@ -806,7 +806,7 @@ export default function DocumentsPage() {
                             附件
                             {Array.from(loadingImages).some(id => doc.attachments.some(a => a.id === id)) && (
                               <span style={{ marginLeft: "0.5rem", fontSize: "0.85rem", color: "var(--muted)" }}>
-                                图片加载中...
+                                {t("loadingImages")}
                               </span>
                             )}
                           </div>
@@ -826,7 +826,7 @@ export default function DocumentsPage() {
                                         borderRadius: "8px",
                                         color: "var(--muted)"
                                       }}>
-                                        加载中...
+                                        {t("loading")}
                                       </div>
                                     )}
                                     <img
