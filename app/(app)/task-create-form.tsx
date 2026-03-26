@@ -221,6 +221,9 @@ export function TaskCreateForm({
           disabled={uploading}
           accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
         />
+        <div className="inline-note" style={{ marginTop: "0.25rem", fontSize: "0.85rem" }}>
+          {t("supportedFileTypes")}
+        </div>
         {uploading ? <p className="inline-note">{t("uploading")}</p> : null}
         {uploadedFiles.length > 0 ? (
           <div style={{ marginTop: "0.5rem" }}>

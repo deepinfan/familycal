@@ -171,7 +171,8 @@ const messages = {
     testButton: "测试",
     chineseName: "中文名",
     englishName: "English Name",
-    availableModels: "可用模型（点击选择）"
+    availableModels: "可用模型（点击选择）",
+    supportedFileTypes: "支持：图片、PDF、Word、Excel、文本文件"
   },
   en: {
     homecal: "HomeCal",
@@ -339,7 +340,8 @@ const messages = {
     testButton: "Test",
     chineseName: "Chinese Name",
     englishName: "English Name",
-    availableModels: "Available Models (click to select)"
+    availableModels: "Available Models (click to select)",
+    supportedFileTypes: "Supported: Images, PDF, Word, Excel, Text files"
   }
 } as const;
 
