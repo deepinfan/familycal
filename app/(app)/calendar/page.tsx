@@ -90,7 +90,7 @@ function displayTaskTitle(item: EventItem, language: "zh" | "en") {
 
 export default function CalendarPage() {
   const { language, t } = useLanguage();
-  const { events, roles, currentRoleId, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
+  const { events, roles, currentRoleId, hasMore, loadMore, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
   const [view, setView] = useState<"week" | "month">("week");
   const [anchor, setAnchor] = useState(new Date());
   const [activeDate, setActiveDate] = useState<string>(toDateKey(new Date()));

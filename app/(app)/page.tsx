@@ -108,7 +108,7 @@ function getStatusClass(status: EventItem["status"]) {
 export default function TasksPage() {
   const { language, t } = useLanguage();
   const searchParams = useSearchParams();
-  const { events, roles, currentRoleId, loading, error: loadError, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
+  const { events, roles, currentRoleId, loading, error: loadError, hasMore, loadMore, createEvent: addEvent, updateEvent: modifyEvent, deleteEvent: removeEvent } = useEvents();
   const [error, setError] = useState("");
 
   const [titleZh, setTitleZh] = useState("");
