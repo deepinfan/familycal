@@ -243,7 +243,13 @@ export default function TasksPage() {
   const otherUnfinished = useMemo(() => otherTasks.filter((item) => item.status !== "done"), [otherTasks]);
   const otherDone = useMemo(() => otherTasks.filter((item) => item.status === "done"), [otherTasks]);
 
-  async function createEvent(attachments = []) {
+  async function createEvent(attachments: Array<{
+    filename: string;
+    filepath: string;
+    thumbnail?: string;
+    mimetype: string;
+    size: number;
+  }> = []) {
     const effectiveDatetime = createMode === "manual" || confirmingParsedTask
       ? combineDateAndTime(manualDate, manualTime)
       : datetime;
