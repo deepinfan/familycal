@@ -5,6 +5,10 @@ import { translateStatus, useLanguage, weekdayLabels } from "../language-context
 import { TaskCreateForm } from "../task-create-form";
 import { TaskEditForm } from "../task-edit-form";
 import { useEvents, type EventItem, type Role } from "../events-context";
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Download from "yet-another-react-lightbox/plugins/download";
+import "yet-another-react-lightbox/styles.css";
 
 const EVENT_TYPES = ["学习", "玩耍", "家务", "购物", "其他"];
 
@@ -117,6 +121,14 @@ export default function CalendarPage() {
   const [completingTaskId, setCompletingTaskId] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState("");
   const [creatingTask, setCreatingTask] = useState(false);
+  const [loadingAttachments, setLoadingAttachments] = useState<Set<string>>(new Set());
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<Array<{
+    src: string;
+    thumbnail?: string;
+    alt: string;
+  }>>([]);
 
   const repeatOptions = [
     { value: "none", label: t("repeatNone") },
@@ -125,6 +137,39 @@ export default function CalendarPage() {
     { value: "monthly", label: t("repeatMonthly") },
     { value: "yearly", label: t("repeatYearly") }
   ] as const;
+
+  async function loadAttachments(eventId: string) {
+    if (loadingAttachments.has(eventId)) return;
+
+    setLoadingAttachments(prev => new Set(prev).add(eventId));
+    const res = await fetch(`/api/events/${eventId}/attachments`);
+    if (res.ok) {
+      const { attachments } = await res.json();
+      modifyEvent(eventId, { attachments });
+    }
+    setLoadingAttachments(prev => {
+      const next = new Set(prev);
+      next.delete(eventId);
+      return next;
+    });
+  }
+
+  function openLightbox(eventId: string, imageIndex: number) {
+    const event = events.find(e => e.id === eventId);
+    if (!event || !event.attachments) return;
+
+    const images = event.attachments
+      .filter(f => f.mimetype.startsWith("image/"))
+      .map(f => ({
+        src: `/api/files/${f.filepath.split('/').pop()}`,
+        thumbnail: f.thumbnail,
+        alt: f.filename
+      }));
+
+    setLightboxImages(images);
+    setLightboxIndex(imageIndex);
+    setLightboxOpen(true);
+  }
 
   async function updateStatus(eventId: string, nextStatus: "pending" | "done") {
     const target = events.find((item) => item.id === eventId);
@@ -566,7 +611,13 @@ export default function CalendarPage() {
                         <li
                           key={item.id}
                           className={`month-task-item${item.status === "done" ? " month-task-item--done" : ""}${isSelected ? " month-task-item--selected" : ""}`}
-                          onClick={() => setSelectedTaskId(isSelected ? "" : item.id)}
+                          onClick={() => {
+                            const willExpand = !isSelected;
+                            setSelectedTaskId(isSelected ? "" : item.id);
+                            if (willExpand && !item.attachments) {
+                              loadAttachments(item.id);
+                            }
+                          }}
                         >
                           <div className="month-task-item__main">
                             <span className="month-task-item__time">{formatTime(item.datetime, language)}</span>
@@ -589,6 +640,54 @@ export default function CalendarPage() {
                               ) : null}
                             </div>
                           </div>
+                          {isSelected && item.attachments && item.attachments.length > 0 ? (
+                            <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)" }}>
+                              <div className="eyebrow" style={{ marginBottom: "0.5rem" }}>附件</div>
+                              {item.attachments.map((file) => {
+                                const isImage = file.mimetype.startsWith("image/");
+                                const protectedUrl = `/api/files/${file.filepath.split('/').pop()}`;
+                                return (
+                                  <div key={file.id} style={{ marginBottom: "1rem" }}>
+                                    {isImage ? (
+                                      <div>
+                                        <img
+                                          src={file.thumbnail || protectedUrl}
+                                          alt={file.filename}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const imageIndex = item.attachments!
+                                              .filter(f => f.mimetype.startsWith("image/"))
+                                              .findIndex(f => f.id === file.id);
+                                            openLightbox(item.id, imageIndex);
+                                          }}
+                                          style={{
+                                            width: "100%",
+                                            height: "auto",
+                                            borderRadius: "8px",
+                                            marginBottom: "0.5rem",
+                                            cursor: "pointer"
+                                          }}
+                                        />
+                                        <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>
+                                          📎 {file.filename} ({(file.size / 1024).toFixed(1)} KB)
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <a
+                                        href={protectedUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: "var(--theme-brand)", textDecoration: "none" }}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        📎 {file.filename} ({(file.size / 1024).toFixed(1)} KB)
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                           {isIssuedByMe && isEditing ? (
                             <TaskEditForm
                               language={language}
@@ -703,7 +802,13 @@ export default function CalendarPage() {
                       <li
                         key={item.id}
                         className={`month-task-item${item.status === "done" ? " month-task-item--done" : ""}${isSelected ? " month-task-item--selected" : ""}`}
-                        onClick={() => setSelectedTaskId(isSelected ? "" : item.id)}
+                        onClick={() => {
+                          const willExpand = !isSelected;
+                          setSelectedTaskId(isSelected ? "" : item.id);
+                          if (willExpand && !item.attachments) {
+                            loadAttachments(item.id);
+                          }
+                        }}
                       >
                         <div className="month-task-item__main">
                           <span className="month-task-item__time">{formatTime(item.datetime, language)}</span>
@@ -726,6 +831,54 @@ export default function CalendarPage() {
                             ) : null}
                           </div>
                         </div>
+                        {isSelected && item.attachments && item.attachments.length > 0 ? (
+                          <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--line)" }}>
+                            <div className="eyebrow" style={{ marginBottom: "0.5rem" }}>附件</div>
+                            {item.attachments.map((file) => {
+                              const isImage = file.mimetype.startsWith("image/");
+                              const protectedUrl = `/api/files/${file.filepath.split('/').pop()}`;
+                              return (
+                                <div key={file.id} style={{ marginBottom: "1rem" }}>
+                                  {isImage ? (
+                                    <div>
+                                      <img
+                                        src={file.thumbnail || protectedUrl}
+                                        alt={file.filename}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const imageIndex = item.attachments!
+                                            .filter(f => f.mimetype.startsWith("image/"))
+                                            .findIndex(f => f.id === file.id);
+                                          openLightbox(item.id, imageIndex);
+                                        }}
+                                        style={{
+                                          width: "100%",
+                                          height: "auto",
+                                          borderRadius: "8px",
+                                          marginBottom: "0.5rem",
+                                          cursor: "pointer"
+                                        }}
+                                      />
+                                      <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>
+                                        📎 {file.filename} ({(file.size / 1024).toFixed(1)} KB)
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <a
+                                      href={protectedUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ color: "var(--theme-brand)", textDecoration: "none" }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      📎 {file.filename} ({(file.size / 1024).toFixed(1)} KB)
+                                    </a>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
                         {isIssuedByMe && isEditing ? (
                           <TaskEditForm
                             language={language}
@@ -763,6 +916,18 @@ export default function CalendarPage() {
           </div>
         </section>
       ) : null}
+
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        index={lightboxIndex}
+        slides={lightboxImages}
+        plugins={[Zoom, Download]}
+        zoom={{
+          maxZoomPixelRatio: 3,
+          scrollToZoom: true
+        }}
+      />
     </main>
   );
 }
