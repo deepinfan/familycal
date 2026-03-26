@@ -26,6 +26,7 @@ type DocumentItem = {
     filepath: string;
     mimetype: string;
     size: number;
+    thumbnail?: string;
   }>;
   createdAt: string;
   updatedAt: string;
@@ -48,6 +49,7 @@ type EditDraft = {
     filepath: string;
     mimetype: string;
     size: number;
+    thumbnail?: string;
   }>;
   newAttachments: Array<{
     filename: string;
