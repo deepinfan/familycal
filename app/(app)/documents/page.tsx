@@ -305,7 +305,7 @@ export default function DocumentsPage() {
     if (isExpanding && data) {
       const doc = data.documents.find(d => d.id === docId);
       if (doc) {
-        // Load content if missing
+        // 1. 优先加载文档内容
         if (!doc.content) {
           const contentRes = await fetch(`/api/documents/${docId}/content`, {
             headers: {
@@ -323,19 +323,21 @@ export default function DocumentsPage() {
           }
         }
 
-        // Load attachments if empty
-        if (doc.attachments.length === 0) {
-          const attachRes = await fetch(`/api/documents/${docId}/attachments`);
-          if (attachRes.ok) {
-            const attachJson = await attachRes.json();
-            setData(prev => prev ? {
-              ...prev,
-              documents: prev.documents.map(d =>
-                d.id === docId ? { ...d, attachments: attachJson.attachments } : d
-              )
-            } : null);
+        // 2. 后台异步加载图片（不阻塞）
+        setTimeout(() => {
+          if (doc.attachments.length === 0) {
+            fetch(`/api/documents/${docId}/attachments`)
+              .then(res => res.json())
+              .then(attachJson => {
+                setData(prev => prev ? {
+                  ...prev,
+                  documents: prev.documents.map(d =>
+                    d.id === docId ? { ...d, attachments: attachJson.attachments } : d
+                  )
+                } : null);
+              });
           }
-        }
+        }, 0);
       }
     }
   }
