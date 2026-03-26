@@ -77,7 +77,6 @@ export default function DocumentsPage() {
     size: number;
   }>>([]);
   const [uploading, setUploading] = useState(false);
-  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [loadingDocIds, setLoadingDocIds] = useState<Set<string>>(new Set());
@@ -930,20 +929,17 @@ export default function DocumentsPage() {
         })}
       </section>
 
-      {viewingImage ? (
-        <div
-          className="modal-backdrop"
-          onClick={() => setViewingImage(null)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <img
-            src={viewingImage}
-            alt="预览"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "90%", maxHeight: "90%", borderRadius: "8px" }}
-          />
-        </div>
-      ) : null}
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        index={lightboxIndex}
+        slides={lightboxImages}
+        plugins={[Zoom, Download]}
+        zoom={{
+          maxZoomPixelRatio: 3,
+          scrollToZoom: true
+        }}
+      />
     </main>
   );
 }
