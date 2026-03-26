@@ -150,40 +150,6 @@ export default function DocumentsPage() {
       sessionStorage.setItem('documents-cache', JSON.stringify(merged));
       return merged;
     });
-
-    // Load attachments for expanded documents
-    if (expandedDocIds.length > 0) {
-      loadAttachmentsForDocs(expandedDocIds, json.documents);
-    }
-  }
-
-  async function loadAttachmentsForDocs(docIds: string[], docs: DocumentItem[]) {
-    const promises = docIds.map(async (docId) => {
-      const doc = docs.find(d => d.id === docId);
-      if (doc && doc.attachments.length === 0) {
-        const res = await fetch(`/api/documents/${docId}/attachments`);
-        if (res.ok) {
-          const json = await res.json();
-          return { docId, attachments: json.attachments };
-        }
-      }
-      return null;
-    });
-
-    const results = await Promise.all(promises);
-
-    setData(prev => {
-      if (!prev) return null;
-      const updated = { ...prev };
-      results.forEach(result => {
-        if (result) {
-          updated.documents = updated.documents.map(d =>
-            d.id === result.docId ? { ...d, attachments: result.attachments } : d
-          );
-        }
-      });
-      return updated;
-    });
   }
 
   useEffect(() => {
