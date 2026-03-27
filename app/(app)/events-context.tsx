@@ -29,7 +29,8 @@ type EventItem = {
   creator: Role;
   issuedBy: Role;
   assignees: Role[];
-  attachments?: Attachment[] | null;
+  hasAttachments?: boolean;
+  attachments?: Attachment[];
   isSaving?: boolean;
 };
 

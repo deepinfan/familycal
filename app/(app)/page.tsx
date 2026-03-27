@@ -30,6 +30,7 @@ type EventItem = {
   issuedBy: Role;
   assignees: Role[];
   isSaving?: boolean;
+  hasAttachments?: boolean;
   attachments?: Array<{
     id: string;
     filename: string;
@@ -37,7 +38,7 @@ type EventItem = {
     mimetype: string;
     size: number;
     thumbnail?: string;
-  }> | null;
+  }>;
 };
 
 type EventsResponse = {
@@ -187,7 +188,6 @@ export default function TasksPage() {
     const res = await fetch(`/api/events/${eventId}/attachments`);
     if (res.ok) {
       const { attachments } = await res.json();
-      console.log('[Debug] Loaded attachments:', attachments, 'for event:', eventId);
       modifyEvent(eventId, { attachments });
     }
     setLoadingAttachments(prev => {
@@ -513,9 +513,7 @@ export default function TasksPage() {
         onClick={() => {
           const willExpand = !isSelected;
           setSelectedTaskId(isSelected ? "" : item.id);
-          console.log('[Debug] item.attachments:', item.attachments, 'willExpand:', willExpand, 'isTemp:', item.id.startsWith('temp-'));
-          if (willExpand && item.attachments === null && !item.id.startsWith('temp-')) {
-            console.log('[Debug] Loading attachments for:', item.id);
+          if (willExpand && item.hasAttachments && !item.attachments && !item.id.startsWith('temp-')) {
             loadAttachments(item.id);
           }
         }}

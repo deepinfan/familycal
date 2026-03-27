@@ -99,6 +99,18 @@ export async function GET(request: NextRequest) {
     })
   ]);
 
+  // 批量查询所有事件的附件数量
+  const eventIds = events.map(e => e.id);
+  const attachmentCounts = await prisma.attachment.groupBy({
+    by: ['eventId'],
+    where: { eventId: { in: eventIds } },
+    _count: { id: true }
+  });
+
+  const attachmentCountMap = new Map(
+    attachmentCounts.map(item => [item.eventId, item._count.id])
+  );
+
   const result = events.map((event) => ({
     id: event.id,
     titleZh: event.titleZh,
@@ -111,7 +123,7 @@ export async function GET(request: NextRequest) {
     creator: event.creator,
     issuedBy: event.issuedBy,
     assignees: event.assignees.map((item) => item.role),
-    attachments: null,
+    hasAttachments: (attachmentCountMap.get(event.id) || 0) > 0,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt
   }));
@@ -239,7 +251,7 @@ export async function POST(request: NextRequest) {
       creator: firstCreated.creator,
       issuedBy: firstCreated.issuedBy,
       assignees: firstCreated.assignees.map((item) => item.role),
-      attachments: null,
+      hasAttachments: false,
       createdAt: firstCreated.createdAt,
       updatedAt: firstCreated.updatedAt
     },
