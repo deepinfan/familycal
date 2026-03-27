@@ -187,6 +187,7 @@ export default function TasksPage() {
     const res = await fetch(`/api/events/${eventId}/attachments`);
     if (res.ok) {
       const { attachments } = await res.json();
+      console.log('[Debug] Loaded attachments:', attachments, 'for event:', eventId);
       modifyEvent(eventId, { attachments });
     }
     setLoadingAttachments(prev => {
