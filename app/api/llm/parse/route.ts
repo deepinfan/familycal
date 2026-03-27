@@ -4,6 +4,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { getDecryptedLlmApiKey, getSystemConfig } from "@/lib/config/system-config";
 import { prisma } from "@/lib/prisma";
 import { parseWithRouter } from "@/lib/parser/router";
+import { translateWithFallback } from "@/lib/translate";
 
 const bodySchema = z.object({ input: z.string().min(1) });
 
@@ -93,10 +94,16 @@ export async function POST(request: NextRequest) {
     );
     const parseTime = Date.now() - startTime;
 
-    const resolvedResults = results.map((result) => ({
-      ...result,
-      assignee: resolveAssignee(result.assignee, parsedBody.data.input, roles, auth.roleId)
-    }));
+    const resolvedResults = await Promise.all(
+      results.map(async (result) => {
+        const titleEn = result.title_zh ? await translateWithFallback(result.title_zh, "en") : "";
+        return {
+          ...result,
+          title_en: titleEn,
+          assignee: resolveAssignee(result.assignee, parsedBody.data.input, roles, auth.roleId)
+        };
+      })
+    );
 
     return NextResponse.json({
       results: resolvedResults,
