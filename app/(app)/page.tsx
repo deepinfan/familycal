@@ -353,10 +353,14 @@ export default function TasksPage() {
         let assigneeIds: string[] = [];
         if (parsed.assignee === "all") {
           assigneeIds = roles.map((role) => role.id);
-        } else if (parsed.assignee) {
+        } else if (parsed.assignee && parsed.assignee.trim()) {
           // 支持逗号分隔的多个ID
           const ids = parsed.assignee.split(',').map((id: string) => id.trim());
           assigneeIds = ids.filter((id: string) => roles.some((r) => r.id === id));
+        }
+        // 如果没有匹配到任何角色，使用当前登录角色
+        if (assigneeIds.length === 0) {
+          assigneeIds = [currentRoleId];
         }
 
         const nextRepeatCycle = parsed.repeat_cycle ?? "none";
