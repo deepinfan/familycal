@@ -12,18 +12,47 @@ function parseTime(text: string, refDate: Date): Date | null {
     return results[0].start.date();
   }
 
-  // 如果 chrono 失败，尝试提取时间点
+  // 中文相对日期解析
+  const date = new Date(refDate);
+
+  // 明天/后天
+  if (/明天/.test(text)) {
+    date.setDate(date.getDate() + 1);
+  } else if (/后天/.test(text)) {
+    date.setDate(date.getDate() + 2);
+  }
+
+  // 周几
+  const weekdayMatch = text.match(/周([一二三四五六日天])/);
+  if (weekdayMatch) {
+    const weekdays = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0, '天': 0 };
+    const targetDay = weekdays[weekdayMatch[1] as keyof typeof weekdays];
+    const currentDay = date.getDay();
+    let daysToAdd = targetDay - currentDay;
+    if (daysToAdd <= 0) daysToAdd += 7;
+    date.setDate(date.getDate() + daysToAdd);
+  }
+
+  // 时间点提取
   const timeMatch = text.match(/(\d{1,2})[::：点](\d{0,2})/);
   if (timeMatch) {
     const hour = parseInt(timeMatch[1]);
     const minute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-    const date = new Date(refDate);
     date.setHours(hour, minute, 0, 0);
+  } else if (/下午/.test(text)) {
+    date.setHours(15, 0, 0, 0);
+  } else if (/上午/.test(text)) {
+    date.setHours(9, 0, 0, 0);
+  } else if (/晚上|晚/.test(text)) {
+    date.setHours(19, 0, 0, 0);
+  } else if (/早上|早/.test(text)) {
+    date.setHours(8, 0, 0, 0);
+  } else if (/中午/.test(text)) {
+    date.setHours(12, 0, 0, 0);
+  }
 
-    // 如果时间已过，设为明天
-    if (date < refDate) {
-      date.setDate(date.getDate() + 1);
-    }
+  // 如果解析出了有效日期变化，返回
+  if (date.getTime() !== refDate.getTime()) {
     return date;
   }
 
@@ -47,11 +76,19 @@ function matchType(text: string): string {
 
 function matchAssignee(text: string, roles: Role[]): string {
   const lower = text.toLowerCase();
+  const matched: string[] = [];
+
   for (const role of roles) {
-    if (text.includes(role.name)) return role.id;
-    if (role.nameEn && lower.includes(role.nameEn.toLowerCase())) return role.id;
+    if (text.includes(role.name)) matched.push(role.id);
+    else if (role.nameEn && lower.includes(role.nameEn.toLowerCase())) matched.push(role.id);
   }
-  return '';
+
+  // 如果匹配到多个，返回逗号分隔的 ID
+  if (matched.length > 1) {
+    return matched.join(',');
+  }
+
+  return matched[0] || '';
 }
 
 const REPEAT_PATTERNS: Record<string, string[]> = {
@@ -83,15 +120,12 @@ function extractTitle(text: string, type: string): string {
 
   // 移除时间相关词汇
   title = title.replace(/\d{1,2}[::：点]\d{0,2}/g, '');
-  title = title.replace(/明天|后天|今天|下周|上午|下午|晚上|早上|中午/gi, '');
+  title = title.replace(/明天|后天|今天|周[一二三四五六日天]|上午|下午|晚上|早上|中午/g, '');
   title = title.replace(/next\s+\w+|tomorrow|today|morning|afternoon|evening|night/gi, '');
 
   // 移除重复模式关键词
-  for (const keywords of Object.values(REPEAT_PATTERNS)) {
-    for (const kw of keywords) {
-      title = title.replace(new RegExp(kw, 'gi'), '');
-    }
-  }
+  title = title.replace(/每天|每周|每月|每年/g, '');
+  title = title.replace(/daily|weekly|monthly|yearly|everyday|every\s+\w+/gi, '');
 
   // 清理多余空格
   title = title.replace(/\s+/g, ' ').trim();
