@@ -123,8 +123,8 @@ function extractTitle(text: string, type: string): string {
   title = title.replace(/明天|后天|今天|周[一二三四五六日天]|上午|下午|晚上|早上|中午/g, '');
   title = title.replace(/next\s+\w+|tomorrow|today|morning|afternoon|evening|night/gi, '');
 
-  // 移除重复模式关键词
-  title = title.replace(/每天|每周|每月|每年/g, '');
+  // 移除重复模式关键词（包括单独的"每"字）
+  title = title.replace(/每天|每周|每月|每年|每/g, '');
   title = title.replace(/daily|weekly|monthly|yearly|everyday|every\s+\w+/gi, '');
 
   // 清理多余空格

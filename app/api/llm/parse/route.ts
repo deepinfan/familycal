@@ -15,6 +15,12 @@ type AssigneeRole = {
 
 function resolveAssignee(raw: string, input: string, roles: AssigneeRole[], currentRoleId: string) {
   const value = raw.trim();
+
+  // 处理逗号分隔的多个ID
+  if (value.includes(',')) {
+    return value;
+  }
+
   const lowerValue = value.toLowerCase();
   const lowerInput = input.toLowerCase();
 
