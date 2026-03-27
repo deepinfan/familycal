@@ -346,21 +346,25 @@ export default function TasksPage() {
       }
 
       const results = json.results || [];
+      console.log('[Frontend] API 返回的 results:', JSON.stringify(results, null, 2));
       const tasks = results.map((parsed: any) => {
         const parsedDatetime = toLocalDatetimeInput(parsed.datetime) || getNowDatetimeInput();
         const parsedParts = splitLocalDatetime(parsedDatetime);
 
         let assigneeIds: string[] = [];
+        console.log('[Frontend] parsed.assignee:', parsed.assignee);
         if (parsed.assignee === "all") {
           assigneeIds = roles.map((role) => role.id);
         } else if (parsed.assignee && parsed.assignee.trim()) {
           // 支持逗号分隔的多个ID
           const ids = parsed.assignee.split(',').map((id: string) => id.trim());
           assigneeIds = ids.filter((id: string) => roles.some((r) => r.id === id));
+          console.log('[Frontend] 解析后的 assigneeIds:', assigneeIds);
         }
         // 如果没有匹配到任何角色，使用当前登录角色
         if (assigneeIds.length === 0) {
           assigneeIds = [currentRoleId];
+          console.log('[Frontend] 使用默认角色:', currentRoleId);
         }
 
         const nextRepeatCycle = parsed.repeat_cycle ?? "none";
