@@ -19,6 +19,14 @@ function resolveAssignee(raw: string, input: string, roles: AssigneeRole[], curr
 
   // 处理逗号分隔的多个ID
   if (value.includes(',')) {
+    // 检查输入中是否有"和"字，如果有则添加当前用户
+    if (/和/.test(input)) {
+      const ids = value.split(',').map(id => id.trim());
+      if (!ids.includes(currentRoleId)) {
+        ids.unshift(currentRoleId);
+      }
+      return ids.join(',');
+    }
     return value;
   }
 
@@ -38,14 +46,26 @@ function resolveAssignee(raw: string, input: string, roles: AssigneeRole[], curr
     role.name === value ||
     role.nameEn?.toLowerCase() === lowerValue
   );
-  if (exact) return exact.id;
+  if (exact) {
+    // 检查输入中是否有"和"字，如果有则添加当前用户
+    if (/和/.test(input)) {
+      return `${currentRoleId},${exact.id}`;
+    }
+    return exact.id;
+  }
 
   const partial = roles.find((role) =>
     value.includes(role.name) ||
     role.name.includes(value) ||
     (role.nameEn ? lowerValue.includes(role.nameEn.toLowerCase()) || role.nameEn.toLowerCase().includes(lowerValue) : false)
   );
-  if (partial) return partial.id;
+  if (partial) {
+    // 检查输入中是否有"和"字，如果有则添加当前用户
+    if (/和/.test(input)) {
+      return `${currentRoleId},${partial.id}`;
+    }
+    return partial.id;
+  }
 
   return currentRoleId;
 }

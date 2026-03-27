@@ -22,15 +22,25 @@ function parseTime(text: string, refDate: Date): Date | null {
     date.setDate(date.getDate() + 2);
   }
 
-  // 周几
-  const weekdayMatch = text.match(/周([一二三四五六日天])/);
-  if (weekdayMatch) {
+  // 下周X
+  const nextWeekMatch = text.match(/下周([一二三四五六日天])/);
+  if (nextWeekMatch) {
     const weekdays = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0, '天': 0 };
-    const targetDay = weekdays[weekdayMatch[1] as keyof typeof weekdays];
+    const targetDay = weekdays[nextWeekMatch[1] as keyof typeof weekdays];
     const currentDay = date.getDay();
-    let daysToAdd = targetDay - currentDay;
-    if (daysToAdd <= 0) daysToAdd += 7;
+    let daysToAdd = targetDay - currentDay + 7; // 下周，至少加7天
     date.setDate(date.getDate() + daysToAdd);
+  } else {
+    // 周几（本周或下周）
+    const weekdayMatch = text.match(/周([一二三四五六日天])/);
+    if (weekdayMatch) {
+      const weekdays = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0, '天': 0 };
+      const targetDay = weekdays[weekdayMatch[1] as keyof typeof weekdays];
+      const currentDay = date.getDay();
+      let daysToAdd = targetDay - currentDay;
+      if (daysToAdd <= 0) daysToAdd += 7;
+      date.setDate(date.getDate() + daysToAdd);
+    }
   }
 
   // 时间点提取
@@ -78,6 +88,25 @@ function matchAssignee(text: string, roles: Role[]): string {
   const lower = text.toLowerCase();
   const matched: string[] = [];
 
+  // 处理"和XX"模式，表示当前用户+XX
+  const andPattern = /和([^和，,;；\s]+)/g;
+  let hasAndPattern = false;
+  let andMatch;
+  while ((andMatch = andPattern.exec(text)) !== null) {
+    hasAndPattern = true;
+    const name = andMatch[1];
+    const role = roles.find(r => r.name === name || (r.nameEn && name.toLowerCase() === r.nameEn.toLowerCase()));
+    if (role && !matched.includes(role.id)) {
+      matched.push(role.id);
+    }
+  }
+
+  // 如果有"和"模式，说明当前用户也参与，但不在这里添加，由后端resolveAssignee处理
+  if (hasAndPattern) {
+    return matched.join(',');
+  }
+
+  // 普通匹配
   for (const role of roles) {
     if (text.includes(role.name)) matched.push(role.id);
     else if (role.nameEn && lower.includes(role.nameEn.toLowerCase())) matched.push(role.id);
@@ -120,12 +149,15 @@ function extractTitle(text: string, type: string): string {
 
   // 移除时间相关词汇
   title = title.replace(/\d{1,2}[::：点]\d{0,2}/g, '');
-  title = title.replace(/明天|后天|今天|周[一二三四五六日天]|上午|下午|晚上|早上|中午/g, '');
+  title = title.replace(/明天|后天|今天|下周|周[一二三四五六日天]|上午|下午|晚上|早上|中午/g, '');
   title = title.replace(/next\s+\w+|tomorrow|today|morning|afternoon|evening|night/gi, '');
 
   // 移除重复模式关键词（包括单独的"每"字）
   title = title.replace(/每天|每周|每月|每年|每/g, '');
   title = title.replace(/daily|weekly|monthly|yearly|everyday|every\s+\w+/gi, '');
+
+  // 移除"和"字
+  title = title.replace(/和/g, '');
 
   // 清理多余空格
   title = title.replace(/\s+/g, ' ').trim();
