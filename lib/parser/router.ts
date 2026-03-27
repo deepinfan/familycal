@@ -17,6 +17,7 @@ export async function parseWithRouter(
   context: LlmParseContext
 ): Promise<LlmParsedResult[]> {
   if (shouldUseLLM(input)) {
+    console.log("[Parser] 使用 LLM 解析（复杂场景）");
     if (!llmConfig) {
       throw new Error("请配置 LLM 或简化输入");
     }
@@ -24,8 +25,13 @@ export async function parseWithRouter(
   }
 
   try {
-    return await parseTasksLocally(input, context);
+    console.log("[Parser] 使用本地解析");
+    const startTime = Date.now();
+    const result = await parseTasksLocally(input, context);
+    console.log(`[Parser] 本地解析完成，耗时 ${Date.now() - startTime}ms`);
+    return result;
   } catch (error) {
+    console.log("[Parser] 本地解析失败，降级到 LLM:", error instanceof Error ? error.message : error);
     if (!llmConfig) {
       throw new Error("本地解析失败，请配置 LLM 或简化输入");
     }

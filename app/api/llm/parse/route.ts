@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
       model: config.llmModel
     } : null;
 
+    const startTime = Date.now();
     const results = await parseWithRouter(
       parsedBody.data.input,
       llmConfig,
@@ -90,13 +91,17 @@ export async function POST(request: NextRequest) {
         assignees: roles
       }
     );
+    const parseTime = Date.now() - startTime;
 
     const resolvedResults = results.map((result) => ({
       ...result,
       assignee: resolveAssignee(result.assignee, parsedBody.data.input, roles, auth.roleId)
     }));
 
-    return NextResponse.json({ results: resolvedResults });
+    return NextResponse.json({
+      results: resolvedResults,
+      parseTime
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "解析失败，请手动填写";
     return NextResponse.json({ error: message }, { status: 502 });
