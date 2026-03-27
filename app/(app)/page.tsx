@@ -512,7 +512,9 @@ export default function TasksPage() {
         onClick={() => {
           const willExpand = !isSelected;
           setSelectedTaskId(isSelected ? "" : item.id);
+          console.log('[Debug] item.attachments:', item.attachments, 'willExpand:', willExpand, 'isTemp:', item.id.startsWith('temp-'));
           if (willExpand && item.attachments === null && !item.id.startsWith('temp-')) {
+            console.log('[Debug] Loading attachments for:', item.id);
             loadAttachments(item.id);
           }
         }}
