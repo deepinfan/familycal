@@ -518,7 +518,7 @@ export default function TasksPage() {
         onClick={() => {
           const willExpand = !isSelected;
           setSelectedTaskId(isSelected ? "" : item.id);
-          if (willExpand && !item.attachments) {
+          if (willExpand && !item.attachments && !item.id.startsWith('temp-')) {
             loadAttachments(item.id);
           }
         }}
