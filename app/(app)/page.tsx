@@ -347,6 +347,8 @@ export default function TasksPage() {
 
       const results = json.results || [];
       console.log('[Frontend] API 返回的 results:', JSON.stringify(results, null, 2));
+      console.log('[Frontend] currentRoleId:', currentRoleId);
+      console.log('[Frontend] roles:', roles);
       const tasks = results.map((parsed: any) => {
         const parsedDatetime = toLocalDatetimeInput(parsed.datetime) || getNowDatetimeInput();
         const parsedParts = splitLocalDatetime(parsedDatetime);
