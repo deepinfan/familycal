@@ -8,7 +8,26 @@ function splitTasks(input: string): string[] {
 
 function parseTime(text: string, refDate: Date): Date | null {
   const results = chrono.parse(text, refDate, { forwardDate: true });
-  return results[0]?.start.date() || null;
+  if (results.length > 0 && results[0].start) {
+    return results[0].start.date();
+  }
+
+  // 如果 chrono 失败，尝试提取时间点
+  const timeMatch = text.match(/(\d{1,2})[::：点](\d{0,2})/);
+  if (timeMatch) {
+    const hour = parseInt(timeMatch[1]);
+    const minute = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+    const date = new Date(refDate);
+    date.setHours(hour, minute, 0, 0);
+
+    // 如果时间已过，设为明天
+    if (date < refDate) {
+      date.setDate(date.getDate() + 1);
+    }
+    return date;
+  }
+
+  return null;
 }
 
 const TYPE_KEYWORDS: Record<string, string[]> = {
@@ -72,8 +91,13 @@ export async function parseTasksLocally(
   const refDate = new Date(context.nowIso);
 
   return tasks.map(taskText => {
-    const datetime = parseTime(taskText, refDate);
-    if (!datetime) throw new Error("时间解析失败");
+    let datetime = parseTime(taskText, refDate);
+
+    // 如果没有明确时间，使用当前时间 + 1小时作为默认
+    if (!datetime) {
+      datetime = new Date(refDate);
+      datetime.setHours(datetime.getHours() + 1);
+    }
 
     const type = matchType(taskText);
     const assignee = matchAssignee(taskText, context.assignees);
