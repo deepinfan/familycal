@@ -22,13 +22,10 @@ function resolveAssignee(raw: string, input: string, roles: AssigneeRole[], curr
   }
 
   const lowerValue = value.toLowerCase();
-  const lowerInput = input.toLowerCase();
 
+  // 如果为空，直接返回当前用户，不在输入中查找
   if (!value) {
-    const mentioned = roles.find((role) =>
-      input.includes(role.name) || (role.nameEn ? lowerInput.includes(role.nameEn.toLowerCase()) : false)
-    );
-    return mentioned?.id ?? currentRoleId;
+    return currentRoleId;
   }
 
   if (["all", "everyone", "全部", "所有人"].includes(lowerValue) || ["全部", "所有人"].includes(value)) {
@@ -49,10 +46,7 @@ function resolveAssignee(raw: string, input: string, roles: AssigneeRole[], curr
   );
   if (partial) return partial.id;
 
-  const mentioned = roles.find((role) =>
-    input.includes(role.name) || (role.nameEn ? lowerInput.includes(role.nameEn.toLowerCase()) : false)
-  );
-  return mentioned?.id ?? currentRoleId;
+  return currentRoleId;
 }
 
 export async function POST(request: NextRequest) {
