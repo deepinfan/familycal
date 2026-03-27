@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
     creator: event.creator,
     issuedBy: event.issuedBy,
     assignees: event.assignees.map((item) => item.role),
+    attachments: null,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt
   }));
@@ -238,6 +239,7 @@ export async function POST(request: NextRequest) {
       creator: firstCreated.creator,
       issuedBy: firstCreated.issuedBy,
       assignees: firstCreated.assignees.map((item) => item.role),
+      attachments: null,
       createdAt: firstCreated.createdAt,
       updatedAt: firstCreated.updatedAt
     },
