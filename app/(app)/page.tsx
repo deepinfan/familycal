@@ -164,6 +164,7 @@ export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [completingTaskId, setCompletingTaskId] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState("");
+  const [deletingRecurringTaskId, setDeletingRecurringTaskId] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [creatingTask, setCreatingTask] = useState(false);
   const [loadingAttachments, setLoadingAttachments] = useState<Set<string>>(new Set());
@@ -468,6 +469,19 @@ export default function TasksPage() {
     setDeletingTaskId("");
   }
 
+  async function deleteRecurringEvent(eventId: string) {
+    setDeletingRecurringTaskId(eventId);
+    const res = await fetch(`/api/events/${eventId}?recurring=true`, { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setError(json.error ?? "删除失败");
+      setDeletingRecurringTaskId("");
+      return;
+    }
+    // 刷新任务列表
+    window.location.reload();
+  }
+
   function toggleAssignee(roleId: string) {
     setAssigneeRoleIds((prev) =>
       prev.includes(roleId) ? prev.filter((id) => id !== roleId) : [...prev, roleId]
@@ -632,6 +646,7 @@ export default function TasksPage() {
             repeatUntil={editRepeatUntil}
             assigneeRoleIds={editAssigneeRoleIds}
             deleting={deletingTaskId === item.id}
+            deletingRecurring={deletingRecurringTaskId === item.id}
             saving={savingEdit}
             setTitleZh={setEditTitleZh}
             setTitleEn={setEditTitleEn}
@@ -643,6 +658,7 @@ export default function TasksPage() {
             onSave={() => saveEditedEvent(item)}
             onCancel={() => setEditingEventId("")}
             onDelete={() => deleteEvent(item.id)}
+            onDeleteRecurring={() => deleteRecurringEvent(item.id)}
           />
         ) : null}
       </li>

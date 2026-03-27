@@ -177,7 +177,13 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   }
 
   const { id } = await context.params;
-  const event = await prisma.event.findUnique({ where: { id }, select: { creatorId: true } });
+  const { searchParams } = new URL(request.url);
+  const deleteRecurring = searchParams.get("recurring") === "true";
+
+  const event = await prisma.event.findUnique({
+    where: { id },
+    select: { creatorId: true, titleZh: true, datetime: true, repeatCycle: true }
+  });
   if (!event) {
     return NextResponse.json({ error: "任务不存在" }, { status: 404 });
   }
@@ -191,17 +197,59 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     select: { roleId: true }
   });
 
-  await prisma.$transaction([
-    prisma.eventLog.deleteMany({ where: { eventId: id } }),
-    prisma.eventAssignee.deleteMany({ where: { eventId: id } }),
-    prisma.event.delete({ where: { id } })
-  ]);
+  if (deleteRecurring && event.repeatCycle !== "none") {
+    // 删除当前及之后的所有周期任务
+    await prisma.$transaction([
+      prisma.eventLog.deleteMany({
+        where: {
+          event: {
+            titleZh: event.titleZh,
+            creatorId: event.creatorId,
+            datetime: { gte: event.datetime }
+          }
+        }
+      }),
+      prisma.eventAssignee.deleteMany({
+        where: {
+          event: {
+            titleZh: event.titleZh,
+            creatorId: event.creatorId,
+            datetime: { gte: event.datetime }
+          }
+        }
+      }),
+      prisma.attachment.deleteMany({
+        where: {
+          event: {
+            titleZh: event.titleZh,
+            creatorId: event.creatorId,
+            datetime: { gte: event.datetime }
+          }
+        }
+      }),
+      prisma.event.deleteMany({
+        where: {
+          titleZh: event.titleZh,
+          creatorId: event.creatorId,
+          datetime: { gte: event.datetime }
+        }
+      })
+    ]);
+  } else {
+    // 只删除当前任务
+    await prisma.$transaction([
+      prisma.eventLog.deleteMany({ where: { eventId: id } }),
+      prisma.eventAssignee.deleteMany({ where: { eventId: id } }),
+      prisma.attachment.deleteMany({ where: { eventId: id } }),
+      prisma.event.delete({ where: { id } })
+    ]);
+  }
 
   void notifyRoles(
     assignees.map((item) => item.roleId),
     {
       title: "HomeCal 任务删除",
-      body: "有一条任务已被删除"
+      body: deleteRecurring ? "周期任务已被删除" : "有一条任务已被删除"
     }
   );
 

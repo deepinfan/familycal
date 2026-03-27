@@ -28,6 +28,7 @@ type Props = {
   repeatUntil: string;
   assigneeRoleIds: string[];
   deleting?: boolean;
+  deletingRecurring?: boolean;
   saving?: boolean;
   setTitleZh: (value: string) => void;
   setTitleEn: (value: string) => void;
@@ -39,6 +40,7 @@ type Props = {
   onSave: () => void;
   onCancel: () => void;
   onDelete?: () => void;
+  onDeleteRecurring?: () => void;
 };
 
 export function TaskEditForm({
@@ -55,6 +57,7 @@ export function TaskEditForm({
   repeatUntil,
   assigneeRoleIds,
   deleting = false,
+  deletingRecurring = false,
   saving = false,
   setTitleZh,
   setTitleEn,
@@ -65,7 +68,8 @@ export function TaskEditForm({
   onToggleAssignee,
   onSave,
   onCancel,
-  onDelete
+  onDelete,
+  onDeleteRecurring
 }: Props) {
   return (
     <div className="inline-form">
@@ -136,6 +140,11 @@ export function TaskEditForm({
         {onDelete ? (
           <button type="button" className="btn btn-danger btn-sm" onClick={onDelete} disabled={deleting}>
             {deleting ? t("deleting") : t("delete")}
+          </button>
+        ) : null}
+        {onDeleteRecurring && repeatCycle !== "none" ? (
+          <button type="button" className="btn btn-danger btn-sm" onClick={onDeleteRecurring} disabled={deletingRecurring}>
+            {deletingRecurring ? (language === "zh" ? "删除中..." : "Deleting...") : (language === "zh" ? "删除周期任务" : "Delete Recurring")}
           </button>
         ) : null}
         <button type="button" className="btn btn-ghost btn-sm" onClick={onCancel}>
