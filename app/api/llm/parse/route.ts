@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getAuthFromRequest } from "@/lib/auth";
 import { getDecryptedLlmApiKey, getSystemConfig } from "@/lib/config/system-config";
 import { prisma } from "@/lib/prisma";
-import { openaiAdapter } from "@/lib/llm/openai";
+import { parseWithRouter } from "@/lib/parser/router";
 
 const bodySchema = z.object({ input: z.string().min(1) });
 
@@ -75,21 +75,19 @@ export async function POST(request: NextRequest) {
       getDecryptedLlmApiKey()
     ]);
 
-    if (!config.llmBaseUrl || !config.llmModel || !apiKey) {
-      return NextResponse.json({ error: "模型服务未配置完整" }, { status: 400 });
-    }
+    const llmConfig = (config.llmBaseUrl && config.llmModel && apiKey) ? {
+      apiUrl: config.llmBaseUrl,
+      apiKey,
+      model: config.llmModel
+    } : null;
 
-    const results = await openaiAdapter.parseTask(
+    const results = await parseWithRouter(
       parsedBody.data.input,
+      llmConfig,
       {
-        apiUrl: config.llmBaseUrl,
-        apiKey,
-        model: config.llmModel
-      },
-      {
-      nowIso: new Date().toISOString(),
-      timezone: "Asia/Shanghai",
-      assignees: roles
+        nowIso: new Date().toISOString(),
+        timezone: "Asia/Shanghai",
+        assignees: roles
       }
     );
 
