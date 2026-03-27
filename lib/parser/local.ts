@@ -73,14 +73,31 @@ function matchRepeatCycle(text: string): "none" | "daily" | "weekly" | "monthly"
 
 function extractTitle(text: string, type: string): string {
   let title = text;
+
+  // 移除类型关键词
   for (const keywords of Object.values(TYPE_KEYWORDS)) {
     for (const kw of keywords) {
       title = title.replace(new RegExp(kw, 'gi'), '');
     }
   }
+
+  // 移除时间相关词汇
   title = title.replace(/\d{1,2}[::：点]\d{0,2}/g, '');
-  title = title.replace(/明天|后天|今天|下周|next\s+\w+|tomorrow|today/gi, '');
-  return title.trim() || type;
+  title = title.replace(/明天|后天|今天|下周|上午|下午|晚上|早上|中午/gi, '');
+  title = title.replace(/next\s+\w+|tomorrow|today|morning|afternoon|evening|night/gi, '');
+
+  // 移除重复模式关键词
+  for (const keywords of Object.values(REPEAT_PATTERNS)) {
+    for (const kw of keywords) {
+      title = title.replace(new RegExp(kw, 'gi'), '');
+    }
+  }
+
+  // 清理多余空格
+  title = title.replace(/\s+/g, ' ').trim();
+
+  // 如果标题为空，使用类型作为标题
+  return title || type;
 }
 
 export async function parseTasksLocally(
