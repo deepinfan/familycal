@@ -354,10 +354,9 @@ export default function TasksPage() {
         if (parsed.assignee === "all") {
           assigneeIds = roles.map((role) => role.id);
         } else if (parsed.assignee) {
-          const target = roles.find((r) => r.id === parsed.assignee);
-          if (target) {
-            assigneeIds = [target.id];
-          }
+          // 支持逗号分隔的多个ID
+          const ids = parsed.assignee.split(',').map((id: string) => id.trim());
+          assigneeIds = ids.filter((id: string) => roles.some((r) => r.id === id));
         }
 
         const nextRepeatCycle = parsed.repeat_cycle ?? "none";
