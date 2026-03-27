@@ -37,7 +37,7 @@ type EventItem = {
     mimetype: string;
     size: number;
     thumbnail?: string;
-  }>;
+  }> | null;
 };
 
 type EventsResponse = {
